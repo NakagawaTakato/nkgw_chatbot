@@ -1,0 +1,132 @@
+body {
+  background-color: #00A2E8;
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+.header {
+  background-color: #00A2E8;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header > div {
+  margin-left: auto;
+  display: flex; /* Flexboxを有効化 */
+  align-items: center; /* 子要素を中央揃え */
+}
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #00A2E8;
+}
+.chat-header {
+  text-align: center;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #00A2E8;
+  color: white;
+  font-size: 30px;
+}
+.scroll-top-button,
+.scroll-bottom-button {
+  width: 150px;
+}
+.scroll-top-button { 
+  position: fixed;
+  top: 250px;
+  right: 50px;
+}
+.scroll-bottom-button {
+  position: fixed;
+  top: 300px;
+  right: 50px;
+}
+.chat-window {
+  flex-grow: 1;
+  padding: 20px;
+  margin-bottom: 10px; /* 下マージンを追加 */
+  overflow-y: auto;
+  background-color: #00A2E8;
+  color: white;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  padding: 5px 30px; /* 上パディングを減らす */
+  background-color: #00A2E8;
+}
+.input-group textarea {
+  box-sizing: border-box;
+  width: calc(100% - 120px);
+  min-height: 20px; /* 2行のテキストの高さを適切に設定 */
+  padding: 10px;
+  margin-right: 10px;
+  font-size: 16px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  resize: vertical; /* ユーザーがテキストエリアの高さを変更できるようにする */
+  background-color: #f4f4f4;
+}
+.input-group button {
+  width: auto; /* ボタンの幅を内容に合わせて自動調整 */
+  min-width: 100px; /* 最小横幅を100pxに設定 */
+  height: 50px;
+  background-color: #0078D7;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0 20px;  /* ボタン内の左右のパディングを追加してテキストが見やすく */
+}
+.language-label {
+  color: white; 
+  margin-right: 10px; 
+  font-size: 16px; 
+}
+.language-select, .chatbot-end {
+  background-color: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+.language-select {
+  height: 30px;
+  padding: 5px 10px;
+  background-color: #0078D7;
+  border-radius: 5px;
+}
+.chatbot-end {
+  height: 25px;  
+  padding: 5px 10px;
+  background-color: #D72638;
+  border-radius: 5px;
+  margin-left: 10px;
+  display: inline-flex;   /* Flexboxを使用して中央揃え*/
+  align-items: center;    /* 垂直方向の中央揃え */
+}
+.chat-header {
+  font-size: 50px;    /* ここでフォントサイズを調整 */
+  font-weight: bold;  /* 太字にする */
+  margin-top: -150px; /* 上部のマージンを負の値に設定して上に移動 */
+}
+.images-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;   /* 子要素を両端に配置 */
+}
+.image-container-left {
+  margin-left: 50px;  /* 左側に20pxのマージンを追加 */
+}
+.image-container-right {
+  margin-left: auto;  /* 左のマージンを自動にして右寄せにする */
+  margin-right: 50px; /* 右側の余白を調整 */
+}
+#messageInput {
+  height: 45px;       /* テキスト入力域の高さ調整はここ */
+}
+#sendButton {
+  border-radius: 18px; /* 丸みを増やす */
+}

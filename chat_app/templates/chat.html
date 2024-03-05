@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+{% load static %}
+{% load i18n %}
+<html lang="{{ request.LANGUAGE_CODE }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+<title>iMPRESS-AI Chatbot</title>
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <div class="header">
+    <div>
+      <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <span class="language-label">{% trans '言語選択 ' %}</span>
+        <select name="language" onchange="this.form.submit()">
+            <option value="ja" {% if request.LANGUAGE_CODE == 'ja' %}selected{% endif %}>Japanese</option>
+            <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+        </select>
+      </form>
+      <button class="chatbot-end">Chatbot ends</button>
+    </div>
+  </div>
+  <div class="images-container">
+    <div class="image-container-left">
+      <img src="{% static 'chat_app/images/roboimage_last.png' %}" alt="上司ロボットの画像" height="150" />
+    </div>
+    <div class="image-container-right">
+      <img src="{% static 'chat_app/images/roboimage_sub.png' %}" alt="部下ロボットの画像" height="130" />
+    </div>
+  </div>
+  <div class="scroll-control">
+    <button onclick="scrollToTop()" class="btn btn-primary scroll-top-button">Scroll to Top   </button>
+    <button onclick="scrollToBottom()" class="btn btn-primary scroll-bottom-button">Scroll to Bottom</button>
+  </div>
+
+  <div class="container">
+    <div class="chat-header">
+      iMPRESS-AI Chatbot
+    </div>
+    <div class="chat-window" id="messages">
+      <!-- Chat messages will be dynamically loaded here -->
+    </div>
+    <div class="input-group">
+      <textarea id="messageInput" placeholder="{% trans '質問を入力して、送信ボタンを押して下さい' %}"></textarea>
+      <button id="sendButton">{% trans '送信' %}</button>
+    </div>
+  </div>
+
+<div id="customDialog" class="modal fade" data-backdrop="static" data-keyboard="false" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans "チャットボット終了の確認" %}</h5>
+      </div>
+        <div class="modal-body">
+          {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
+          {% trans "問題なければ、OKボタンを押して下さい。" %}
+        </div>
+      <div class="modal-footer">
+        <button id="okButton" class="btn btn-primary">OK</button>
+        <button id="cancelButton" class="btn btn-secondary">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div id="askUrl" data-url="{% url 'ask' %}" style="display:none;"></div>
+
+  <div id="loadingIndicator" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.5);">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+  </div>
+  
+  
+  <!-- Optional JavaScript -->
+  <!-- jQuery Slimをフルバージョンに変更 -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>  
+  <script>
+    $(document).ready(function() {
+        let csrfToken = document.getElementById('csrfToken').value;
+        let askUrl = document.getElementById('askUrl').dataset.url;
+
+        // ページロード時にローカルストレージから会話履歴を取得して表示
+        let storedMessages = JSON.parse(localStorage.getItem('messages'));
+        if (storedMessages) {
+            $('#messages').html(storedMessages);
+        }
+        
+        $('#sendButton').click(function() {
+            let message = $('#messageInput').val().trim(); // メッセージの前後の空白を削除
+            if (message) { // メッセージが空でない場合のみ処理を実行
+                // ユーザーのメッセージをチャットウィンドウに追加
+                $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;">: ' + message + '</div>');
+
+                $('#loadingIndicator').show(); // インジケータを表示 
+
+                $.ajax({
+                    type: "POST",
+                    url: askUrl,
+                    data: { message: message },
+                    headers: { "X-CSRFToken": csrfToken },
+                    success: function(data) {
+                        $('#messages').append('<div><img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;">: ' + data.message + '</div>');
+                        $('#messages').append('<hr>');  // ユーザーの会話出力後の区切り文字
+
+                        // 会話履歴をローカルストレージに保存
+                        localStorage.setItem('messages', JSON.stringify($('#messages').html()));
+                        
+                        $('#loadingIndicator').hide(); // インジケータを非表示
+                        // 画面の左上にスクロール位置を設定する
+                        window.scroll(1000, 1000);     // 画面最下部に移動 
+                                         
+                    },
+                    error: function() {
+                        // エラーが発生した場合もインジケータを非表示にする
+                        $('#loadingIndicator').hide();
+                    }
+                });
+                $('#messageInput').val(''); // clear input
+            }
+        });
+
+        $('#okButton').click(function() {
+          $('#customDialog').modal('hide');
+        });
+
+        $('#cancelButton').click(function() {
+          $('#customDialog').modal('hide');
+        });
+
+        $('.chatbot-end').click(function() {
+          $('#customDialog').modal('show'); // カスタムダイアログを表示
+        });
+
+        $('#okButton').click(function() {
+          $('#customDialog').modal('hide');
+          // OKボタンがクリックされたときに会話履歴をクリア
+          localStorage.removeItem('messages');
+          console.log("通過 localStorage.remove");
+          $.ajax({
+            type: "POST",
+            url: '/chat_app/clear_history/',  // clear_history関数に対応するURL
+            headers: { "X-CSRFToken": csrfToken },
+            success: function() {
+              console.log("通過 /chat_app/clear_history/");
+              window.open('','_self').close();
+            }
+          });
+        });
+
+        $('#cancelButton').click(function() {
+          $('#customDialog').modal('hide');
+        });
+        
+    });
+
+    function scrollToBottom() {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        left: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+    });
+}
+  </script>
+</body>
+</html>
