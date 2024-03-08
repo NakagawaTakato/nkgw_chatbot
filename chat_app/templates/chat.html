@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 <!-- Custom CSS -->
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
+<!-- APL tab icon -->
+<link rel="icon" href="{% static 'icon/favicon.ico' %}">
 </head>
 <body>
   <div class="header">
@@ -72,7 +74,7 @@
 
   <div id="askUrl" data-url="{% url 'ask' %}" style="display:none;"></div>
 
-  <div id="loadingIndicator" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.5);">
+  <div id="loadingIndicator" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.3);">
     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
       <div class="spinner-border text-primary" role="status">
         <span class="sr-only">Loading...</span>
@@ -101,7 +103,7 @@
             let message = $('#messageInput').val().trim(); // メッセージの前後の空白を削除
             if (message) { // メッセージが空でない場合のみ処理を実行
                 // ユーザーのメッセージをチャットウィンドウに追加
-                $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;">: ' + message + '</div>');
+                $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;"> : ' + message + '</div>');
 
                 $('#loadingIndicator').show(); // インジケータを表示 
 
@@ -111,23 +113,33 @@
                     data: { message: message },
                     headers: { "X-CSRFToken": csrfToken },
                     success: function(data) {
-                        $('#messages').append('<div><img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;">: ' + data.message + '</div>');
-                        $('#messages').append('<hr>');  // ユーザーの会話出力後の区切り文字
+                        // ボットのメッセージを1文字ずつ出力する関数
+                        function typeMessage(message, index, messageContainer) {
+                            if (index < message.length) {                   // メッセージの終わりまで到達していない場合
+                                $(messageContainer).append(message[index]); // 現在の文字を追加
+                                setTimeout(function() {                     // 次の文字を追加するためにタイマーを設定
+                                    typeMessage(message, index + 1, messageContainer); // 再帰的に関数を呼び出し、次の文字を処理
+                                }, 35);                                     // 35ミリ秒後に次の文字を追加
+                            } else {
+                                $('#messages').append('<br><hr>');          // メッセージの終わりに改行と区切り線を追加
+                                // メッセージの出力が完了したら、localStorageに保存
+                                localStorage.setItem('messages', JSON.stringify($('#messages').html()));
+                                $('#loadingIndicator').hide();              // インジケータを非表示
+                                window.scroll(1000, 1000);                  // 画面最下部に移動
+                            }
+                        }
 
-                        // 会話履歴をローカルストレージに保存
-                        localStorage.setItem('messages', JSON.stringify($('#messages').html()));
-                        
-                        $('#loadingIndicator').hide(); // インジケータを非表示
-                        // 画面の左上にスクロール位置を設定する
-                        window.scroll(1000, 1000);     // 画面最下部に移動 
-                                         
+                        // ボットのメッセージ出力開始
+                        let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"> : ');
+                        $('#messages').append(messageContainer);
+                        typeMessage(data.message, 0, messageContainer);      // メッセージと開始インデックス（0）を渡して関数を呼び出し
                     },
                     error: function() {
                         // エラーが発生した場合もインジケータを非表示にする
                         $('#loadingIndicator').hide();
                     }
                 });
-                $('#messageInput').val(''); // clear input
+                $('#messageInput').val(''); // 入力フィールドをクリア
             }
         });
 
@@ -154,7 +166,8 @@
             headers: { "X-CSRFToken": csrfToken },
             success: function() {
               console.log("通過 /chat_app/clear_history/");
-              window.open('','_self').close();
+              // window.open('','_self').close();
+              window.location.reload();       // ページをリロード
             }
           });
         });
