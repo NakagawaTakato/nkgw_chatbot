@@ -26,10 +26,14 @@ def ask(request):
     conversation = request.session.get('conversation', [])     # これまでの会話をセッションから取得
     conversation.append(user_message)     # ユーザーのメッセージを会話に追加
     prompt = " ".join(conversation)     # コンテキストとしてプロンプトを作成
+    # gpt-4-1106-preview  gpt-3.5-turbo
     response = openai.ChatCompletion.create(
-      model="gpt-3.5-turbo",
+      model="gpt-4-1106-preview",
       messages=[
-          {"role": "system", "content": "You are a helpful assistant."},
+          {
+            "role": "system",
+            "content": "To improve the readability of responses to users, responses should follow these constraints: Add line breaks to facilitate easier reading. If a concise answer is requested, summarize the response without omitting crucial information. For detailed answers, adhere to the basic format for answer composition, where 'XXXXXX' sections summarize the response content, and 'YYYYYY' sections provide a detailed, itemized explanation. 【Basic Format of Answer】 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\nXXXXXXXXXXXXXXXXXX\n1. YYYYYYYYYYYYYYYY\n  (1) YYYYYYYYYYYYYY\n      ① YYYYYYYYYYYYYY\n      ② YYYYYYYYYYYYYY\n          1) YYYYYYYYYYYYYY\n          2) YYYYYYYYYYYYYY\n  (2) YYYYYYYYYYYYYY\n      ① YYYYYYYYYYYYYY\n      ② YYYYYYYYYYYYYY\n2. YYYYYYYYYYYYYYYY\nThe pattern continues in this manner."
+          },
           {"role": "user", "content": prompt}
       ]
     )

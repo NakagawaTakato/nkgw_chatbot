@@ -32,6 +32,7 @@ body {
 }
 .scroll-top-button,
 .scroll-bottom-button {
+  display: none;    /* 初期状態で非表示 */
   width: 150px;
 }
 .scroll-top-button { 
@@ -47,7 +48,7 @@ body {
 .chat-window {
   flex-grow: 1;
   padding: 20px;
-  margin-bottom: 10px; /* 下マージンを追加 */
+  margin-bottom: 10px;  /*下マージンを追加 */
   overflow-y: auto;
   background-color: #00A2E8;
   color: white;
@@ -55,13 +56,17 @@ body {
 
 .input-group {
   display: flex;
-  align-items: center;
-  padding: 5px 30px; /* 上パディングを減らす */
+  align-items: center; ;
+  padding: 5px 0px; 
   background-color: #00A2E8;
-}
+  position: fixed; 
+  bottom: 0; 
+  width:  75%; 
+  box-sizing: border-box; 
+} 
 .input-group textarea {
   box-sizing: border-box;
-  width: calc(100% - 120px);
+  width: calc(100% - 100px - 20px); /* ボタンの幅、ボタンの左右のパディング、.input-groupの左右のパディングを考慮 */
   min-height: 20px; /* 2行のテキストの高さを適切に設定 */
   padding: 10px;
   margin-right: 10px;
@@ -110,7 +115,7 @@ body {
 .chat-header {
   font-size: 50px;    /* ここでフォントサイズを調整 */
   font-weight: bold;  /* 太字にする */
-  margin-top: -150px; /* 上部のマージンを負の値に設定して上に移動 */
+  margin-top: -120px; /* 上部のマージンを負の値に設定して上に移動 */
 }
 .images-container {
   display: flex;

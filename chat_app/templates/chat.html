@@ -13,6 +13,11 @@
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 <!-- APL tab icon -->
 <link rel="icon" href="{% static 'icon/favicon.ico' %}">
+<style>
+  body {
+    zoom: 90%;
+  }
+</style>
 </head>
 <body>
   <div class="header">
@@ -30,10 +35,10 @@
   </div>
   <div class="images-container">
     <div class="image-container-left">
-      <img src="{% static 'chat_app/images/roboimage_last.png' %}" alt="上司ロボットの画像" height="150" />
+      <img src="{% static 'chat_app/images/roboimage_last.png' %}" alt="上司ロボットの画像" height="100" />
     </div>
     <div class="image-container-right">
-      <img src="{% static 'chat_app/images/roboimage_sub.png' %}" alt="部下ロボットの画像" height="130" />
+      <img src="{% static 'chat_app/images/roboimage_sub.png' %}" alt="部下ロボットの画像" height="100" />
     </div>
   </div>
   <div class="scroll-control">
@@ -93,19 +98,32 @@
         let csrfToken = document.getElementById('csrfToken').value;
         let askUrl = document.getElementById('askUrl').dataset.url;
 
+        // スクロールバーの有無を判断するカスタムjQuery関数を定義
+        //jQuery.fn.hasScrollBar = function() {
+        //    console.log("this.get(0).scrollHeight:", this.get(0).scrollHeight); 
+        //    console.log("this.get(1).scrollHeight:", this.get(0).scrollHeight);
+        //    console.log("this.innerHeight():", this.innerHeight()); 
+        //    return this.get(0) ? this.get(0).scrollHeight > this.innerHeight() : false;
+        //};
+        //console.log("Has Scroll Bar:first", $('#messages').hasScrollBar());
+
         // ページロード時にローカルストレージから会話履歴を取得して表示
         let storedMessages = JSON.parse(localStorage.getItem('messages'));
         if (storedMessages) {
             $('#messages').html(storedMessages);
         }
         
+        // メッセージ送信ボタンのクリックイベント
         $('#sendButton').click(function() {
-            let message = $('#messageInput').val().trim(); // メッセージの前後の空白を削除
-            if (message) { // メッセージが空でない場合のみ処理を実行
+            // メッセージの前後の空白を削除
+            let message = $('#messageInput').val().trim();   
+            // メッセージが空でない場合のみ処理を実行
+            if (message) { 
                 // ユーザーのメッセージをチャットウィンドウに追加
-                $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;"> : ' + message + '</div>');
+                $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;"></div>');
+                $('#messages').append('<div>' + message + '</div>');
 
-                $('#loadingIndicator').show(); // インジケータを表示 
+                $('#loadingIndicator').show();   // インジケータを表示 
 
                 $.ajax({
                     type: "POST",
@@ -113,35 +131,63 @@
                     data: { message: message },
                     headers: { "X-CSRFToken": csrfToken },
                     success: function(data) {
-                        // ボットのメッセージを1文字ずつ出力する関数
                         function typeMessage(message, index, messageContainer) {
-                            if (index < message.length) {                   // メッセージの終わりまで到達していない場合
-                                $(messageContainer).append(message[index]); // 現在の文字を追加
-                                setTimeout(function() {                     // 次の文字を追加するためにタイマーを設定
-                                    typeMessage(message, index + 1, messageContainer); // 再帰的に関数を呼び出し、次の文字を処理
-                                }, 35);                                     // 35ミリ秒後に次の文字を追加
+                            if (index < message.length) {                 // メッセージの終わりまで到達していない場合
+                                if (message[index] === '\n') {            // 改行コードがある場合は、次の行に出力
+                                    $(messageContainer).append('<br>');   // 改行を追加
+                                    // 改行後の空白を&nbsp;に置換
+                                    let spaces = "";
+                                    index++;
+                                    while (message[index] === ' ') {
+                                        spaces += "&nbsp;";
+                                        index++;
+                                    }
+                                    $(messageContainer).append(spaces);
+                                    // 空白の後の文字を処理するためにindexをデクリメント
+                                    index--;
+                                } else {
+                                    $(messageContainer).append(message[index]); // 現在の文字を追加
+                                }
+                                // 次の文字を追加するためにタイマーを設定
+                                // 再帰的に関数を呼び出し、次の文字を処理  50ミリ秒ごとに次の文字を追加
+                                setTimeout(function() {                   
+                                    typeMessage(message, index + 1, messageContainer); 
+                                }, 50);                                   
                             } else {
                                 $('#messages').append('<br><hr>');          // メッセージの終わりに改行と区切り線を追加
                                 // メッセージの出力が完了したら、localStorageに保存
                                 localStorage.setItem('messages', JSON.stringify($('#messages').html()));
                                 $('#loadingIndicator').hide();              // インジケータを非表示
                                 window.scroll(1000, 1000);                  // 画面最下部に移動
+                                // setTimeout(toggleScrollButtons, 100);       // ScrollButton表示判断
                             }
                         }
 
                         // ボットのメッセージ出力開始
-                        let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"> : ');
+                        let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"></div>');
                         $('#messages').append(messageContainer);
-                        typeMessage(data.message, 0, messageContainer);      // メッセージと開始インデックス（0）を渡して関数を呼び出し
+                        let textContainer = $('<div>');                     // 新しい行にメッセージを追加するためのコンテナ
+                        $('#messages').append(textContainer);
+                        typeMessage(data.message, 0, textContainer);        // メッセージと開始インデックス（0）を渡して関数を呼び出し
+                        // setTimeout(toggleScrollButtons, 100);               // ScrollButton表示判断
                     },
                     error: function() {
                         // エラーが発生した場合もインジケータを非表示にする
                         $('#loadingIndicator').hide();
                     }
                 });
-                $('#messageInput').val(''); // 入力フィールドをクリア
+                $('#messageInput').val('');            // 入力フィールドをクリア
+                // setTimeout(toggleScrollButtons, 100);  // ScrollButton表示判断
             }
         });
+
+        // Enterキーで送信ボタンをクリックするイベントを追加
+        $('#messageInput').keydown(function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {    // Shiftキーが押されていないときのみ処理を実行
+                e.preventDefault();                    // Enterキーによるフォーム送信を防ぐ
+                $('#sendButton').click();              // 送信ボタンをクリック
+            }
+        });     
 
         $('#okButton').click(function() {
           $('#customDialog').modal('hide');
@@ -152,7 +198,7 @@
         });
 
         $('.chatbot-end').click(function() {
-          $('#customDialog').modal('show'); // カスタムダイアログを表示
+          $('#customDialog').modal('show');             // カスタムダイアログを表示
         });
 
         $('#okButton').click(function() {
@@ -162,12 +208,12 @@
           console.log("通過 localStorage.remove");
           $.ajax({
             type: "POST",
-            url: '/chat_app/clear_history/',  // clear_history関数に対応するURL
+            url: '/chat_app/clear_history/',            // clear_history関数に対応するURL
             headers: { "X-CSRFToken": csrfToken },
             success: function() {
               console.log("通過 /chat_app/clear_history/");
               // window.open('','_self').close();
-              window.location.reload();       // ページをリロード
+              window.location.reload();                 // ページをリロード
             }
           });
         });
@@ -175,7 +221,34 @@
         $('#cancelButton').click(function() {
           $('#customDialog').modal('hide');
         });
+
+        // スクロールバーの表示状態に基づいてボタンの表示を切り替える関数
+        //function toggleScrollButtons() {
+        //    console.log("toggleScrollButtons is called");    
+        //    if ($('#messages').hasScrollBar()) {
+        //        console.log("scroll-button hide");  
+        //        $('.scroll-top-button').hide();      // スクロールバーがない場合はボタンを非表示
+        //        $('.scroll-bottom-button').hide();   // スクロールバーがない場合はボタンを非表示
+        //    } else {
+        //        console.log("scroll-button show");   
+        //        $('.scroll-top-button').show();      // スクロールバーがある場合はボタンを表示
+        //        $('.scroll-bottom-button').show();   // スクロールバーがある場合はボタンを表示
+        //    }
+        //} 
         
+        // スクロール時にスクロールボタンを無条件に表示
+        function showScrollButtons() {           
+            $('.scroll-top-button').show();
+            $('.scroll-bottom-button').show();
+        }
+
+        // ページロード時とスクロール時にボタンの表示を切り替える
+        // setTimeout(toggleScrollButtons, 100);  
+        // スクロールイベントを疑似的に発生させる
+        window.scrollTo(0, 100); // 100ピクセル下にスクロール
+        // ユーザーがスクロールしたときにボタンを表示する
+        // スクロールバーが表示されている時のみこのイベントは発生
+        window.addEventListener('scroll', showScrollButtons);
     });
 
     function scrollToBottom() {
@@ -192,7 +265,7 @@
         left: 0,
         behavior: 'smooth'
     });
-}
+  }
   </script>
 </body>
 </html>
