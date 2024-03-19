@@ -149,10 +149,10 @@
                                     $(messageContainer).append(message[index]); // 現在の文字を追加
                                 }
                                 // 次の文字を追加するためにタイマーを設定
-                                // 再帰的に関数を呼び出し、次の文字を処理  50ミリ秒ごとに次の文字を追加
+                                // 再帰的に関数を呼び出し、次の文字を処理  15ミリ秒ごとに次の文字を追加
                                 setTimeout(function() {                   
                                     typeMessage(message, index + 1, messageContainer); 
-                                }, 50);                                   
+                                }, 15);                                   
                             } else {
                                 $('#messages').append('<br><hr>');          // メッセージの終わりに改行と区切り線を追加
                                 // メッセージの出力が完了したら、localStorageに保存
