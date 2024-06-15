@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+{% load static %}
+{% load i18n %}
+<html lang="{{ request.LANGUAGE_CODE }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+<title>iFUSION-AI Chatbot</title>
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+<!-- APL tab icon -->
+<link rel="icon" href="{% static 'icon/favicon.ico' %}">
+</head>
+<body>
+  <div class="header">
+    <div>
+      <form action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <span class="language-label">{% trans '言語選択 ' %}</span>
+        <select name="language" onchange="this.form.submit()">
+            <option value="ja" {% if request.LANGUAGE_CODE == 'ja' %}selected{% endif %}>Japanese</option>
+            <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+        </select>
+      </form>
+      <span class="mode-label">{% trans '　会話モード選択　' %}</span>
+      <select id="modeSelect">
+        <option value="free">フリー会話モード </option>
+        <option value="precheck" selected>事前確認モード</option>
+      </select>
+      <button class="chatbot-end">Chatbot ends</button>
+    </div>
+  </div>
+  <div class="images-container">
+    <div class="image-container-left">
+      <img src="{% static 'chat_app/images/roboimage_last.png' %}" alt="上司ロボットの画像" height="100" />
+      <div class="conversation-mode">　事前確認モード</div>
+    </div>
+    <div class="image-container-right">
+      <img src="{% static 'chat_app/images/roboimage_sub.png' %}" alt="部下ロボットの画像" height="100" />
+    </div>
+  </div>
+  <div class="scroll-control">
+    <button onclick="scrollToTop()" class="btn btn-primary scroll-top-button">Scroll to Top   </button>
+    <button onclick="scrollToBottom()" class="btn btn-primary scroll-bottom-button">Scroll to Bottom</button>
+  </div>
+
+  <div class="container">
+    <div class="chat-header">
+      iFUSION-AI Chatbot
+    </div>
+    <!-- chat_first.html 固有定義 START -->
+    <div class="special-content">
+      <ul id="response-list" class="clickable-list">
+        <!-- リストアイテムはJavaScriptで動的に追加 -->
+      </ul>
+    </div>
+    <!-- chat_first.html 固有定義 END -->
+    <div class="chat-window" id="messages">
+      <!-- Chat messages will be dynamically loaded here -->
+    </div>
+    <div class="input-group">
+      <textarea id="messageInput" placeholder="{% trans '質問を入力して、送信ボタンを押して下さい' %}"></textarea>
+      <button id="sendButton">{% trans '送信' %}</button>
+    </div>
+  </div>
+
+  <div id="customDialog" class="modal fade" data-backdrop="static" data-keyboard="false" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{% trans "チャットボット終了の確認" %}</h5>
+        </div>
+          <div class="modal-body">
+            {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
+            {% trans "問題なければ、OKボタンを押して下さい。" %}
+          </div>
+        <div class="modal-footer">
+          <button id="okButton" class="btn btn-primary">OK</button>
+          <button id="cancelButton" class="btn btn-secondary">CANCEL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="myModalLabel">ご連絡</h4>
+        </div>
+        <div class="modal-body">
+          会話履歴が10件を超えました。以後、最新10件の会話履歴までを考慮して回答させて頂きます。
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">閉じる</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="freeChatModal" tabindex="-1" role="dialog" aria-labelledby="freeChatModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="freeChatModalLabel">確認</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          では、ChatBotとのフリー会話モードに切り替えますので、<br>
+          質問内容を入力して下さい。
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="redirectToChat()">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="faisssearchModal" tabindex="-1" role="dialog" aria-labelledby="faisssearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="faisssearchModalLabel">確認</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          では、ChatBotとのフリー会話モードに切り替えて、<br>
+          選択されたキーワードで検索して回答します。
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" onclick="redirectToChat()">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Modal -->
+  <div class="modal fade" id="customModal" tabindex="-1" role="dialog" aria-labelledby="customModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customModalLabel">確認</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- メッセージはJavaScriptで動的に設定 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-ok">OK</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div id="askFirstUrl" data-url="{% url 'ask_first' %}" style="display:none;"></div>   <!-- chat_first.html固有 -->
+
+  <div id="loadingIndicator" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.3);">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery Slimをフルバージョンに変更 -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>  
+  <script>
+    $('#cancelButton').click(function() {
+      $('#customDialog').modal('hide');
+    });
+    // console.log('JS POINT-01')   //work print 
+
+      $(document).ready(function() {
+
+          let csrfToken = document.getElementById('csrfToken').value;
+          let askFirstUrl = document.getElementById('askFirstUrl').dataset.url;
+
+          // ページロード時にローカルストレージから会話履歴を取得して表示
+          let storedMessages = JSON.parse(localStorage.getItem('messages'));
+          if (storedMessages) {
+              $('#messages').html(storedMessages);
+          }
+          // 画像データのリンクをクリック不可能にする
+          $('#messages a').on('click', function(e) {
+            e.preventDefault();
+          });
+          
+          // 会話回数をローカルストレージから読み込む
+          let chatCount = parseInt(localStorage.getItem('chatCount')) || 0;
+
+          // メッセージ送信ボタンのクリックイベント
+          $('#sendButton').click(function() {
+              // メッセージの前後の空白を削除
+              let message = $('#messageInput').val().trim();   
+              // メッセージが空でない場合のみ処理を実行
+              if (message) { 
+
+                   // 会話回数をインクリメントして保存
+                  chatCount++;
+                  localStorage.setItem('chatCount', chatCount);
+
+                  // ユーザーのメッセージをチャットウィンドウに追加
+                  $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;"></div>');
+                  $('#messages').append('<div>' + message + '</div>');
+
+                  $('#loadingIndicator').show();   // インジケータを表示
+
+                  // ボットのメッセージをウィンドウに出力する処理  
+                  $.ajax({
+                      type: "POST",
+                      url: $('#askFirstUrl').data('url'),
+                      data: { message: message },
+                      headers: { "X-CSRFToken": $('#csrfToken').val() },
+                      dataType: 'json',
+                      success: function(data) {
+
+                          // ボットのメッセージ出力開始 
+                          let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"></div>');
+                          messageContainer.append('<div>※ご質問にお答えできる内容を抽出しました。下記の中から選択して下さい。<br>' +
+                            '　該当する内容がない場合は、質問内容を変えて再度送信してみて下さい。</div>');
+                          let responseList = $('<ul id="response-list">');
+                          data.responses.forEach(function(response, index) {
+                              if (response.text && response.index_no !== undefined) {
+                                  let responseElement = $('<li class="clickable-response" data-index="' + response.index_no + '" data-text="' + response.text + '">' + response.text + '</li>');
+                                  responseList.append(responseElement);
+                              } else {
+                                  console.log('response.text or response.index_no is undefined for index', index);
+                              }
+                          });
+                          // 固定文言をリストの最後に追加
+                          responseList.append('<li class="clickable-response" data-index="sel_etc1">その他選択：iFUSION-AI Chatbotに直接いろいろ聞きたい</li>');
+                          messageContainer.append(responseList);
+                          // 固定文言をリストの最後に追加
+                          responseList.append('<li class="clickable-response" data-index="sel_etc2">その他選択：iFUSION-AI Chatbotにパッケージでやりたい事を伝えて回答をもらいたい</li>');
+                          messageContainer.append(responseList);
+                          $('#messages').append(messageContainer);    // 既存のメッセージに追加
+
+                          // メッセージの出力が完了したら、localStorageに保存
+                          localStorage.setItem('messages', JSON.stringify($('#messages').html()));
+                          window.scroll(10000, 10000);                // 画面最下部に移動
+                          $('#loadingIndicator').hide();         // インジケータを非表示
+
+                        },
+                    error: function() {
+                        // $('#loadingIndicator').hide();
+                    }
+                });
+                  $('#messageInput').val('');            // 入力フィールドをクリア
+              }
+          });
+
+
+          // クリックイベントハンドラー  (選択項目をクリックしたときの処理)
+          $(document).on('click', '.clickable-response', function() {
+            // クリックされた要素のindexを取得
+            let dataIndex = $(this).attr('data-index');
+            switch (dataIndex) {
+                case 'sel_etc1':
+                    // モーダルを表示してフリー会話モード(chat.html)に切り替える
+                    $('#freeChatModal').modal('show'); 
+                    // モーダルのOKボタンがクリックされたときに windowChangeClick を呼び出す
+                    $('#freeChatModal').on('shown.bs.modal', function () {
+                      $('#freeChatModal .btn-primary').click(function() {
+                        windowChangeClick('sel_etc1'); 
+                      });
+                    });
+                    break;
+                case 'sel_etc2':
+                    let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"></div>');
+                    messageContainer.append('<div>下記の中から聞きたい事を選択して下さい。</div>');
+                    // 選択肢のリストを作成
+                    let optionsList = $('<ul>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_1">1. 利用者を登録する方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_2">2. 入力用Excelブックを登録する方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_3">3. 登録データを管理するマスタ情報を登録する方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_4">4. いつ・誰に、どのような条件で入力用Excelブックを利用するかを設定する方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_5">5. 入力用Excelブックを取得する。入力したデータを登録する方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_6">6. 入力用Excelブックの登録状況や登録データを確認する方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_7">7. 登録されているデータを抽出する方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_8">8. 登録されているデータをエクスポートする方法</li>');
+                    optionsList.append(
+                      '<li class="clickable-option" data-index="sel_etc2_9">9. 該当なし</li>');
+                    // メッセージコンテナに選択肢リストを追加
+                    messageContainer.append(optionsList);
+                    // チャットウィンドウにメッセージコンテナを追加
+                    $('#messages').append(messageContainer);
+                    // メッセージの出力が完了したら、localStorageに保存
+                    localStorage.setItem('messages', JSON.stringify($('#messages').html()));
+                    // 画面を最下部にスクロール
+                    window.scrollTo(0, document.body.scrollHeight);
+                    break;
+                default:
+                    // Faiss検索結果をリストアイテムからクリックした場合の処理
+                    // Faiss-index と data-text 属性を取得
+                    let indexNo = $(this).data('index');
+                    let text = $(this).data('text');
+                    console.log("選択されたインデックス: ", indexNo);
+                    console.log("選択されたテキスト: ", text);
+                    // モーダルを表示してフリー会話モード(chat.html)に切り替える
+                    $('#faisssearchModal').modal('show'); 
+                    $('#faisssearchModal').on('shown.bs.modal', function () {
+                      $('#faisssearchModal .btn-primary').click(function() {
+                        faisssearchClick(indexNo, text);
+                      });
+                    });
+                    break;
+            }
+          });
+
+
+          // クリックイベントハンドラー　（聞きたいことを選択したときの処理）
+          $(document).on('click', '.clickable-option', function() {
+              let dataIndex = $(this).attr('data-index');
+
+              // モーダルウィンドウの設定　 (該当なしをクリックしたときの処理)
+              if (dataIndex === "sel_etc2_9") {
+                  $('#customModal .modal-body').text(`質問内容を変えて再入力して、再送信してみて下さい。`);
+                  $('#customModal .modal-footer .btn-ok').text('OK'); // ボタンのテキストを'OK'に設定
+                  $('#customModal').modal('show');
+                  // OKボタンでモーダルを閉じるイベントハンドラを設定
+                  $('#customModal .btn-ok').off('click').on('click', function() {
+                      $('#customModal').modal('hide');
+                  });
+                  return; // 処理を中断
+              }
+
+              // 先頭の番号を除いたテキスト部分を抽出
+              let text = $(this).text().match(/\d+\.\s*(.*)/)[1]; 
+
+              // モーダルウィンドウの設定
+              $('#customModal .modal-body').text(
+                `フリー会話モードに切り替えて、選択された内容でChatbotへの問い合わせを行います。` +
+                `\n選択された内容が質問入力欄に設定されますが、質問内容は変更できます。`
+              );
+              $('#customModal').modal('show');
+
+              // モーダルのOKボタンがクリックされたときに winselectChangeClick を呼び出す
+              $('#customModal .btn-ok').off('click').on('click', function() {
+                  winselectChangeClick(dataIndex, text);
+                  $('#customModal').modal('hide');
+              });
+          });
+
+
+          // Enterキーで送信ボタンをクリックするイベントを追加
+          $('#messageInput').keydown(function(e) {
+              if (e.key === 'Enter' && !e.shiftKey) {    // Shiftキーが押されていないときのみ処理を実行
+                  e.preventDefault();                    // Enterキーによるフォーム送信を防ぐ
+                  $('#sendButton').click();              // 送信ボタンをクリック
+              }
+          });
+
+          $('#okButton').click(function() {
+            $('#customDialog').modal('hide');
+          });
+
+          $('#cancelButton').click(function() {
+            $('#customDialog').modal('hide');
+          });
+
+          $('.chatbot-end').click(function() {
+            $('#customDialog').modal('show');             // カスタムダイアログを表示
+          });
+
+          $('#okButton').click(function() {
+            $('#customDialog').modal('hide');
+            // OKボタンがクリックされたときに会話履歴をクリア
+            localStorage.removeItem('messages');
+            // OKボタンがクリックされたときに会話回数をクリア
+            localStorage.removeItem('chatCount'); 
+            console.log("通過 localStorage.remove");
+            $.ajax({
+              type: "POST",
+              url: '/chat_app/clear_history/',            // clear_history関数に対応するURL
+              headers: { "X-CSRFToken": csrfToken },
+              success: function() {
+                console.log("通過 /chat_app/clear_history/");
+                // window.open('','_self').close();
+                window.location.reload();                 // ページをリロード
+              }
+            });
+          });
+      });
+
+
+      // 選択されたレスポンスのインデックスをPOSTし、その後 chat_view にリダイレクト
+      // indexNoを渡すが、単純に画面遷移するだけのパターン
+      function windowChangeClick(indexNo) {
+        const csrfToken = document.getElementById('csrfToken').value;
+        fetch("{% url 'submit_winchange_responses' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({ index: indexNo })
+        }).then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            window.location.href = "{% url 'chat_view' %}";
+          } else {
+            console.error('Error:', data.message);
+          }
+        }).catch(error => console.error('Error:', error));
+      }
+
+
+      // 選択されたレスポンスのインデックスをPOSTし、その後 chat_view にリダイレクト
+      // Faiss-indexNoとtextを渡すして、chat.htmlにリダイレクトするパターン
+      function faisssearchClick(index, text) {
+        const csrfToken = document.getElementById('csrfToken').value;
+        fetch("{% url 'submit_faisssearch_responses' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({ index: index, text: text })
+        }).then(response => response.json())
+          .then(data => {
+            console.log(data.message); 
+            if (data.status === 'success') {
+              // 成功時、chat.htmlにリダイレクトする
+              window.location.href = "{% url 'chat_view' %}";
+            } else {
+              console.error('Error:', data.message);
+            }
+          }).catch(error => console.error('Error:', error));
+      }
+
+
+      // 選択されたレスポンスのインデックスをPOSTし、その後 chat_view にリダイレクト
+      // 聞きたいことのindexNoとtextを渡して、chat.htmlにリダイレクトするパターン
+      function winselectChangeClick(index, text) {
+        const csrfToken = document.getElementById('csrfToken').value;
+        fetch("{% url 'submit_selected_responses' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({ index: index, text: text })
+        }).then(response => response.json())
+          .then(data => {
+            console.log(data.message); 
+            if (data.status === 'success') {
+              // 成功時、chat.htmlにリダイレクトする
+              window.location.href = "{% url 'chat_view' %}";
+            } else {
+              console.error('Error:', data.message);
+            }
+          }).catch(error => console.error('Error:', error));
+      }
+
+
+      // 事前確認モード初期表示した時のボットメッセージ出力処理
+      document.addEventListener('DOMContentLoaded', function() {
+        var initialMessage = "{{ initial_bot_message }}";
+        var messageContainer = document.getElementById('messages');
+
+        // ボットの画像とメッセージを含むdivを作成
+        var botImageSrc = "{% static 'chat_app/images/bot.png' %}";
+        var messageDiv = document.createElement('div');
+        messageDiv.className = 'bot-message'; // CSSクラスを追加してスタイリング可能
+
+        // 画像要素の作成
+        var imgElement = document.createElement('img');
+        imgElement.src = botImageSrc;
+        imgElement.alt = 'Bot';
+        imgElement.style.height = '20px';
+        imgElement.style.width = '20px';
+
+        // 画像をdivに最初に追加
+        messageDiv.appendChild(imgElement);
+
+        // メッセージテキストの要素を作成
+        var textElement = document.createElement('span');
+        messageDiv.appendChild(textElement); // テキストをdivに追加
+
+        // 完成したdivをメッセージコンテナに追加
+        messageContainer.appendChild(messageDiv);
+
+        // 一文字ずつ表示する関数
+        function typeWriter(text, i, fnCallback) {
+            if (i < (text.length)) {
+                // 現在のテキスト + 次の文字を追加
+                textElement.innerHTML = text.substring(0, i+1) + '<span aria-hidden="true"></span>';
+
+                // 少し待ってから次の文字を追加
+                setTimeout(function() {
+                    typeWriter(text, i + 1, fnCallback)
+                }, 30); // 30ミリ秒ごとに次の文字を追加
+            } else if (typeof fnCallback == 'function') {
+                // 全てのテキストが表示された後のコールバック
+                setTimeout(fnCallback, 700);
+            }
+        }
+
+        // メッセージを改行で分割し、それぞれの部分を一文字ずつ表示
+        textElement.innerHTML = initialMessage;
+        var fullText = textElement.textContent;
+        typeWriter(fullText, 0, function() {
+            // すべてのテキストが表示された後に実行する処理
+            console.log("全て表示完了");
+        });
+
+        localStorage.setItem('initialMessageShown', 'true');
+      });
+
+
+      // スクロール時にスクロールボタンを無条件に表示
+      function showScrollButtons() {
+        $('.scroll-top-button').show();
+        $('.scroll-bottom-button').show();
+      }
+
+      // ページロード時とスクロール時にボタンの表示を切り替える
+      // setTimeout(toggleScrollButtons, 100);
+      // スクロールイベントを疑似的に発生させる
+      window.scrollTo(0, 100); // 100ピクセル下にスクロール
+      // ユーザーがスクロールしたときにボタンを表示する
+      // スクロールバーが表示されている時のみこのイベントは発生
+      window.addEventListener('scroll', showScrollButtons);
+
+
+      function scrollToBottom() {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          left: 0,
+          behavior: 'smooth'
+        });
+      }
+
+
+      function scrollToTop() {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'smooth'
+        });
+      }
+
+
+      document.getElementById('modeSelect').addEventListener('change', function() {
+        var mode = this.value;
+        if (mode === 'free') {
+          window.location.href = '/chat_app/chat/';
+        } else if (mode === 'precheck') {
+          // 処理なし
+        }
+      });
+  </script>
+</body>
+</html>

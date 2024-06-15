@@ -31,7 +31,7 @@ DEBUG = True
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['*']    # ngrok,herokuの設定　
 
-CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']  # ngrokの固有設定
+# CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']  # ngrokの固有設定
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -134,8 +134,11 @@ LANGUAGES = [
 # STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"),]
 
 STATIC_URL = 'static/'                   # heroku 固有の設定
-STATIC_DIR = BASE_DIR / "static"        # heroku 固有の設定
-STATICFILES_DIRS = [STATIC_DIR,]         
+STATIC_DIR = BASE_DIR / "static"         # heroku 固有の設定
+STATICFILES_DIRS = [STATIC_DIR,]
+
+# 画像ファイルが保存されているディレクトリへのパスを追加
+IMAGE_FILE_PATH = os.path.join(BASE_DIR, 'common', 'imagefile')
 
 django_on_heroku.settings(locals())      # heroku 固有の設定
 
@@ -143,3 +146,96 @@ django_on_heroku.settings(locals())      # heroku 固有の設定
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# common/dataディレクトリ内のファイルへのパス
+PARQUET_FILE_PATH = os.path.join(BASE_DIR, 'common', 'data', 'output_data_all.parquet')
+FAISS_INDEX_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all.idx')
+FAISS_INDEX_SUMMARY_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all_summary.idx')
+
+# ロギング　（本番環境用）  
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+
+#     # ロガーの設定
+#     'loggers': {
+#         # Djangoが利用するロガー
+#         'django': {
+#             'handlers': ['file'],
+#             'level': 'INFO',
+#         },
+#         # diaryアプリケーションが利用するロガー
+#         'diary': {
+#             'handlers': ['file'],
+#             'level': 'INFO',
+#         },
+#     },
+
+#     # ハンドラの設定
+#     'handlers': {
+#         'file': {
+#             'level': 'INFO',
+#             'class': 'logging.handlers.TimedRotatingFileHandler',
+#             'filename': os.path.join(BASE_DIR, 'logs', 'django.log'), 
+#             'formatter': 'prod',
+#             'when': 'D',  # ログローテーション(新しいファイルへの切り替え)間隔の単位(D=日)
+#             'interval': 1,  # ログローテーション間隔(1日単位)
+#             'backupCount': 7,  # 保存しておくログファイル数
+#             'delay': True,  # delayオプションを追加
+#         },
+#     },
+
+#     # フォーマッタの設定
+#     'formatters': {
+#         'prod': {
+#             'format': '\t'.join([
+#                 '%(asctime)s',
+#                 '[%(levelname)s]',
+#                 '%(pathname)s(Line:%(lineno)d)',
+#                 '%(message)s'
+#             ])
+#         },
+#     }
+# }
+
+# ロギング　（開発環境用）
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    # ロガーの設定
+    'loggers': {
+        # Djangoが利用するロガー
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+        },
+        # diaryアプリケーションが利用するロガー
+        'diary': {
+            'handlers': ['file'],
+            'level': 'INFO',
+        },
+    },
+
+    # ハンドラの設定
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',  # TimedRotatingFileHandlerからFileHandlerに変更
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'formatter': 'prod',
+        },
+    },
+
+    # フォーマッタの設定
+    'formatters': {
+        'prod': {
+            'format': '\t'.join([
+                '%(asctime)s',
+                '[%(levelname)s]',
+                '%(pathname)s(Line:%(lineno)d)',
+                '%(message)s'
+            ])
+        },
+    }
+}

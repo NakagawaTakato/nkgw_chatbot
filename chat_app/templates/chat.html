@@ -6,18 +6,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
-<title>iMPRESS-AI Chatbot</title>
+<title>iFUSION-AI Chatbot</title>
 <!-- Bootstrap CSS -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 <!-- Custom CSS -->
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 <!-- APL tab icon -->
 <link rel="icon" href="{% static 'icon/favicon.ico' %}">
-<style>
-  body {
-    zoom: 90%;
-  }
-</style>
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 </head>
 <body>
   <div class="header">
@@ -30,52 +27,83 @@
             <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
         </select>
       </form>
+      <span class="mode-label">{% trans '　会話モード選択　' %}</span>
+      <select id="modeSelect">
+        <option value="free" selected>フリー会話モード</option>
+        <option value="precheck">事前確認モード</option>
+      </select>
       <button class="chatbot-end">Chatbot ends</button>
     </div>
   </div>
   <div class="images-container">
     <div class="image-container-left">
       <img src="{% static 'chat_app/images/roboimage_last.png' %}" alt="上司ロボットの画像" height="100" />
+      <div class="conversation-mode">フリー会話モード</div>
     </div>
     <div class="image-container-right">
       <img src="{% static 'chat_app/images/roboimage_sub.png' %}" alt="部下ロボットの画像" height="100" />
     </div>
   </div>
   <div class="scroll-control">
-    <button onclick="scrollToTop()" class="btn btn-primary scroll-top-button">Scroll to Top   </button>
+    <button onclick="scrollToTop()" class="btn btn-primary scroll-top-button">Scroll to Top</button>
     <button onclick="scrollToBottom()" class="btn btn-primary scroll-bottom-button">Scroll to Bottom</button>
   </div>
 
   <div class="container">
     <div class="chat-header">
-      iMPRESS-AI Chatbot
+      iFUISION-AI Chatbot
     </div>
     <div class="chat-window" id="messages">
       <!-- Chat messages will be dynamically loaded here -->
     </div>
     <div class="input-group">
-      <textarea id="messageInput" placeholder="{% trans '質問を入力して、送信ボタンを押して下さい' %}"></textarea>
-      <button id="sendButton">{% trans '送信' %}</button>
+      <textarea id="messageInput" class="form-control" placeholder="{% trans '質問を入力して、送信ボタンを押して下さい' %}"></textarea>
+      <div class="input-group-append">
+        <button id="sendButton" class="btn btn-primary rounded-pill btn-narrow">{% trans '送信' %}</button>
+        <!-- 音声入力ボタンのスタイルをBootstrapで適用し、さらにrounded-pillクラスを追加 -->
+        <button id="startSpeechButton" class="btn btn-success rounded-pill btn-narrow">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <div class="tooltip" style="display: none;">このマイクボタンのＯＮ／ＯＦＦで音声入力の開始と停止を行います。</div>
+      </div>
     </div>
   </div>
 
-<div id="customDialog" class="modal fade" data-backdrop="static" data-keyboard="false" style="display: none;">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{% trans "チャットボット終了の確認" %}</h5>
-      </div>
-        <div class="modal-body">
-          {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
-          {% trans "問題なければ、OKボタンを押して下さい。" %}
+
+  <div id="customDialog" class="modal fade" data-backdrop="static" data-keyboard="false" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{% trans "チャットボット終了の確認" %}</h5>
         </div>
-      <div class="modal-footer">
-        <button id="okButton" class="btn btn-primary">OK</button>
-        <button id="cancelButton" class="btn btn-secondary">CANCEL</button>
+          <div class="modal-body">
+            {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
+            {% trans "会話モードは、事前確認モードになります。" %}<br>
+            {% trans "問題なければ、OKボタンを押して下さい。" %}
+          </div>
+        <div class="modal-footer">
+          <button id="okButton" class="btn btn-primary">OK</button>
+          <button id="cancelButton" class="btn btn-secondary">CANCEL</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="myModalLabel">ご連絡</h4>
+        </div>
+        <div class="modal-body">
+          会話履歴が10件を超えました。以後、最新10件の会話履歴までを考慮して回答させて頂きます。
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">閉じる</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="askUrl" data-url="{% url 'ask' %}" style="display:none;"></div>
 
@@ -86,100 +114,49 @@
       </div>
     </div>
   </div>
-  
-  
+
   <!-- Optional JavaScript -->
   <!-- jQuery Slimをフルバージョンに変更 -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.9.3/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>  
   <script>
-    $(document).ready(function() {
+    $('#cancelButton').click(function() {
+      $('#customDialog').modal('hide');
+    });
+
+    $(document).ready(function() { 
+        // chat_first.htmlから連携された聞きたい事を特定した質問文がある場合は、
+        // 入力テキストエリアに設定する。    
+        const text = "{{ request.session.selectedText|default:'' }}";
+        if (text) {
+            document.getElementById('messageInput').value = text;
+        }
+
         let csrfToken = document.getElementById('csrfToken').value;
         let askUrl = document.getElementById('askUrl').dataset.url;
-
-        // スクロールバーの有無を判断するカスタムjQuery関数を定義
-        //jQuery.fn.hasScrollBar = function() {
-        //    console.log("this.get(0).scrollHeight:", this.get(0).scrollHeight); 
-        //    console.log("this.get(1).scrollHeight:", this.get(0).scrollHeight);
-        //    console.log("this.innerHeight():", this.innerHeight()); 
-        //    return this.get(0) ? this.get(0).scrollHeight > this.innerHeight() : false;
-        //};
-        //console.log("Has Scroll Bar:first", $('#messages').hasScrollBar());
 
         // ページロード時にローカルストレージから会話履歴を取得して表示
         let storedMessages = JSON.parse(localStorage.getItem('messages'));
         if (storedMessages) {
             $('#messages').html(storedMessages);
         }
-        
-        // メッセージ送信ボタンのクリックイベント
-        $('#sendButton').click(function() {
-            // メッセージの前後の空白を削除
-            let message = $('#messageInput').val().trim();   
-            // メッセージが空でない場合のみ処理を実行
-            if (message) { 
-                // ユーザーのメッセージをチャットウィンドウに追加
-                $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;"></div>');
-                $('#messages').append('<div>' + message + '</div>');
 
-                $('#loadingIndicator').show();   // インジケータを表示 
-
-                $.ajax({
-                    type: "POST",
-                    url: askUrl,
-                    data: { message: message },
-                    headers: { "X-CSRFToken": csrfToken },
-                    success: function(data) {
-                        function typeMessage(message, index, messageContainer) {
-                            if (index < message.length) {                 // メッセージの終わりまで到達していない場合
-                                if (message[index] === '\n') {            // 改行コードがある場合は、次の行に出力
-                                    $(messageContainer).append('<br>');   // 改行を追加
-                                    // 改行後の空白を&nbsp;に置換
-                                    let spaces = "";
-                                    index++;
-                                    while (message[index] === ' ') {
-                                        spaces += "&nbsp;";
-                                        index++;
-                                    }
-                                    $(messageContainer).append(spaces);
-                                    // 空白の後の文字を処理するためにindexをデクリメント
-                                    index--;
-                                } else {
-                                    $(messageContainer).append(message[index]); // 現在の文字を追加
-                                }
-                                // 次の文字を追加するためにタイマーを設定
-                                // 再帰的に関数を呼び出し、次の文字を処理  15ミリ秒ごとに次の文字を追加
-                                setTimeout(function() {                   
-                                    typeMessage(message, index + 1, messageContainer); 
-                                }, 15);                                   
-                            } else {
-                                $('#messages').append('<br><hr>');          // メッセージの終わりに改行と区切り線を追加
-                                // メッセージの出力が完了したら、localStorageに保存
-                                localStorage.setItem('messages', JSON.stringify($('#messages').html()));
-                                $('#loadingIndicator').hide();              // インジケータを非表示
-                                window.scroll(1000, 1000);                  // 画面最下部に移動
-                                // setTimeout(toggleScrollButtons, 100);       // ScrollButton表示判断
-                            }
-                        }
-
-                        // ボットのメッセージ出力開始
-                        let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"></div>');
-                        $('#messages').append(messageContainer);
-                        let textContainer = $('<div>');                     // 新しい行にメッセージを追加するためのコンテナ
-                        $('#messages').append(textContainer);
-                        typeMessage(data.message, 0, textContainer);        // メッセージと開始インデックス（0）を渡して関数を呼び出し
-                        // setTimeout(toggleScrollButtons, 100);               // ScrollButton表示判断
-                    },
-                    error: function() {
-                        // エラーが発生した場合もインジケータを非表示にする
-                        $('#loadingIndicator').hide();
-                    }
-                });
-                $('#messageInput').val('');            // 入力フィールドをクリア
-                // setTimeout(toggleScrollButtons, 100);  // ScrollButton表示判断
-            }
-        });
+        // chat_first.htmlから連携されたfaiss特定済みの質問文がある場合は、
+        // 入力テキストエリアに設定する。 
+        const faissSelectedText = "{{ request.session.faiss_selectedText|default:'' }}";
+        if (faissSelectedText) {
+            $('#messageInput').val(faissSelectedText);
+            sendMessage(faissSelectedText);  // テキストを使って質問を自動送信
+        } else {
+            // メッセージ送信ボタンのクリックイベント（既存の機能を関数化）
+            $('#sendButton').click(function() {
+                let message = $('#messageInput').val().trim();
+                if (message) {
+                    sendMessage(message);
+                }
+            });
+        }
 
         // Enterキーで送信ボタンをクリックするイベントを追加
         $('#messageInput').keydown(function(e) {
@@ -187,7 +164,7 @@
                 e.preventDefault();                    // Enterキーによるフォーム送信を防ぐ
                 $('#sendButton').click();              // 送信ボタンをクリック
             }
-        });     
+        });
 
         $('#okButton').click(function() {
           $('#customDialog').modal('hide');
@@ -212,44 +189,149 @@
             headers: { "X-CSRFToken": csrfToken },
             success: function() {
               console.log("通過 /chat_app/clear_history/");
-              // window.open('','_self').close();
-              window.location.reload();                 // ページをリロード
+              window.location.href = '/chat_app/chat_first/'; 
             }
           });
         });
-
-        $('#cancelButton').click(function() {
-          $('#customDialog').modal('hide');
-        });
-
-        // スクロールバーの表示状態に基づいてボタンの表示を切り替える関数
-        //function toggleScrollButtons() {
-        //    console.log("toggleScrollButtons is called");    
-        //    if ($('#messages').hasScrollBar()) {
-        //        console.log("scroll-button hide");  
-        //        $('.scroll-top-button').hide();      // スクロールバーがない場合はボタンを非表示
-        //        $('.scroll-bottom-button').hide();   // スクロールバーがない場合はボタンを非表示
-        //    } else {
-        //        console.log("scroll-button show");   
-        //        $('.scroll-top-button').show();      // スクロールバーがある場合はボタンを表示
-        //        $('.scroll-bottom-button').show();   // スクロールバーがある場合はボタンを表示
-        //    }
-        //} 
-        
-        // スクロール時にスクロールボタンを無条件に表示
-        function showScrollButtons() {           
-            $('.scroll-top-button').show();
-            $('.scroll-bottom-button').show();
-        }
-
-        // ページロード時とスクロール時にボタンの表示を切り替える
-        // setTimeout(toggleScrollButtons, 100);  
-        // スクロールイベントを疑似的に発生させる
-        window.scrollTo(0, 100); // 100ピクセル下にスクロール
-        // ユーザーがスクロールしたときにボタンを表示する
-        // スクロールバーが表示されている時のみこのイベントは発生
-        window.addEventListener('scroll', showScrollButtons);
     });
+
+
+    // メッセージを送信する共通関数
+    function sendMessage(message) {
+      console.log("通過sendMessage_point01");
+      $('#sendButton').prop('disabled', true); // ボタンを無効化
+
+      let csrfToken = document.getElementById('csrfToken').value;
+      let askUrl = document.getElementById('askUrl').dataset.url;
+
+      // ユーザーのメッセージをチャットウィンドウに追加
+      $('#messages').append('<div><img src="{% static "chat_app/images/human.png" %}" alt="User" style="height: 20px; width: 20px;"></div>');
+      $('#messages').append('<div>' + message + '</div>');
+
+      $('#loadingIndicator').show();   // インジケータを表示 
+
+      // ボットのメッセージをウィンドウに出力する処理 
+      $.ajax({
+          type: "POST",
+          url: askUrl,
+          data: { message: message },
+          headers: { "X-CSRFToken": csrfToken },
+          success: function(data) {
+              // 会話履歴が10件を超えた場合に連絡メッセージを表示
+              if (data.show_history_limit_message) {
+                $('#myModal').modal('show');
+              }
+              function typeMessage(message, index, messageContainer) {
+                  if (index < message.length) {                 // メッセージの終わりまで到達していない場合
+                      if (message[index] === '\n') {            // 改行コードがある場合は、次の行に出力
+                          $(messageContainer).append('<br>');   // 改行を追加
+                          // 改行後の空白を&nbsp;に置換
+                          let spaces = "";
+                          index++;
+                          while (message[index] === ' ') {
+                              spaces += "&nbsp;";
+                              index++;
+                          }
+                          $(messageContainer).append(spaces);
+                          // 空白の後の文字を処理するためにindexをデクリメント
+                          index--;
+                      } else {
+                          $(messageContainer).append(message[index]); // 現在の文字を追加
+                      }
+
+                      window.scroll(10000, 10000);                  // 画面最下部に移動
+
+                      // 次の文字を追加するためにタイマーを設定
+                      // 再帰的に関数を呼び出し、次の文字を処理  15ミリ秒ごとに次の文字を追加
+                      setTimeout(function() {
+                          typeMessage(message, index + 1, messageContainer);
+                      }, 15);
+                  } else {
+                      $('#messages').append('<br><hr>');          // メッセージの終わりに改行と区切り線を追加
+                      // メッセージの出力が完了したら、localStorageに保存
+                      localStorage.setItem('messages', JSON.stringify($('#messages').html()));
+                      $('#loadingIndicator').hide();              // インジケータを非表示
+                      window.scroll(10000, 10000);                  // 画面最下部に移動
+                      // setTimeout(toggleScrollButtons, 100);       // ScrollButton表示判断
+                  }
+              }
+
+              // ボットのメッセージ出力開始
+              let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"></div>');
+              $('#messages').append(messageContainer);
+              let textContainer = $('<div>');                     // 新しい行にメッセージを追加するためのコンテナ
+              $('#messages').append(textContainer);
+              typeMessage(data.message, 0, textContainer);        // メッセージと開始インデックス（0）を渡して関数を呼び出し
+              // setTimeout(toggleScrollButtons, 100);               // ScrollButton表示判断
+
+              // 画像パスが含まれている場合、ファイル名を表示
+              if (data.images && data.images.length > 0) {
+                data.images.forEach(function(imagePath) {
+                    // ファイル名を取得
+                    var fileName = imagePath.split('/').pop();
+                    // ファイル名を表示する要素を作成
+                    var fileNameElement = $('<a>', {
+                        text: fileName,
+                        href: imagePath,
+                        target: '_blank',                // 新しいタブで開く
+                        css: {
+                            display: 'block',            // ブロック要素として表示
+                            margin: '5px 0',             // 余白を設定
+                            color: 'blue',               // リンクの色
+                            width: 'fit-content',          // リンクの幅をコンテンツに合わせる
+                            textDecoration: 'underline'  // 下線をつける
+                        }
+                      }).hover(
+                        function() {
+                            $(this).css('font-weight', 'bold');  // マウスを当てたときに太字にする
+                        },
+                        function() {
+                            $(this).css('font-weight', 'normal');  // マウスを外したときに通常の太さに戻す
+                        }
+                    );
+                    $('#messages').append(fileNameElement);
+                });
+            }
+          },
+          error: function(xhr, status, errorThrown) {
+              console.error("AJAX Error:", status, errorThrown);
+              console.error("Response:", xhr.responseText);
+              // エラーが発生した場合もインジケータを非表示にする
+              $('#loadingIndicator').hide();
+          },
+          complete: function() {
+            // リクエスト完了後（成功・失敗に関わらず）、ボタンを再度有効化
+            $('#sendButton').prop('disabled', false);
+
+            // ここでイベントハンドラを再バインド
+            $('#sendButton').off('click').on('click', function() {
+                let message = $('#messageInput').val().trim();
+                if (message) {
+                    sendMessage(message);
+                }
+            });
+          }
+      });
+      $('#messageInput').val('');            // 入力フィールドをクリア
+      // setTimeout(toggleScrollButtons, 100);  // ScrollButton表示判断
+    }
+
+
+    // スクロール時にスクロールボタンを無条件に表示
+    function showScrollButtons() {
+      $('.scroll-top-button').show();
+      $('.scroll-bottom-button').show();
+    }
+
+
+    // ページロード時とスクロール時にボタンの表示を切り替える
+    // setTimeout(toggleScrollButtons, 100);
+    // スクロールイベントを疑似的に発生させる
+    window.scrollTo(0, 100); // 100ピクセル下にスクロール
+    // ユーザーがスクロールしたときにボタンを表示する
+    // スクロールバーが表示されている時のみこのイベントは発生
+    window.addEventListener('scroll', showScrollButtons);
+
 
     function scrollToBottom() {
       window.scrollTo({
@@ -259,13 +341,112 @@
       });
     }
 
+
     function scrollToTop() {
     window.scrollTo({
         top: 0,
         left: 0,
         behavior: 'smooth'
+      });
+    }
+
+    document.getElementById('modeSelect').addEventListener('change', function() {
+        var mode = this.value;
+        if (mode === 'precheck') {
+          window.location.href = '/chat_app/chat_first/';
+        } else if (mode === 'free') {
+          // 処理なし
+        }
     });
-  }
+
+
+    // 音声入力ボタンのクリックイベント -- START -----------------------------------------------
+    // Web Speech APIのSpeechRecognitionオブジェクトを初期化
+    const speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new speechRecognition();
+    recognition.lang = 'ja-JP';
+    // recognition.lang = 'xx-x';     // エラー発生用に無効な言語設定を指定
+    recognition.interimResults = true;
+    recognition.continuous = true; // continuousをtrueに設定
+
+    let isListening = false;
+    let finalTranscript = '';
+
+    document.getElementById('startSpeechButton').addEventListener('click', function() {
+      if (!isListening) {
+        recognition.start();
+        // 一時的にエラーを発生させる 　TEST用コード
+        //recognition.onerror({ error: 'test error' });
+        isListening = true;
+        this.classList.add('active');
+        // console.log("音声認識を開始しました。");
+      } else {
+        recognition.stop();
+        isListening = false;
+        this.classList.remove('active');
+        // console.log("音声認識を停止しました。");
+      }
+    });
+
+    recognition.onresult = function(event) {
+      // console.log("onresult イベントが発火しました。");
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      document.getElementById('messageInput').value = finalTranscript;
+    };
+
+    recognition.onspeechend = function() {
+      // console.log("音声が自然に途切れました。onspeechend イベントが発火しました。");
+      finalTranscript += " / ";   // 音声が自然に途切れたときに / を追加
+      document.getElementById('messageInput').value = finalTranscript; // テキストエリアの値を更新
+      recognition.stop();
+      isListening = false;
+      document.getElementById('startSpeechButton').classList.remove('active'); // ボタンを無色にする
+    };
+
+    recognition.onend = function() {
+      // console.log("onend イベントが発火しました。");
+      isListening = false;
+      document.getElementById('startSpeechButton').classList.remove('active');
+    };
+
+    recognition.onerror = function(event) {
+      console.error('音声認識エラー:', event.error);
+      isListening = false;
+      document.getElementById('startSpeechButton').classList.remove('active');
+
+      // エラーメッセージを表示
+      alert('音声認識でエラーになりました。音声入力装置の接続を確認して下さい。エラーが続くようであれば手入力でお願いいたします。');
+    };
+    // 音声入力ボタンのクリックイベント -- END -----------------------------------------------
+
+    // 音声入力したあとの送信ボタンのクリックイベントで入力されたテキストをクリアする
+    document.getElementById('sendButton').addEventListener('click', function() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      if (message) {
+        sendMessage(message);
+        messageInput.value = ''; // 質問入力エリアをクリア
+        finalTranscript = '';    // 前回の音声認識結果をクリア
+      }
+    });
+    
+    $(document).ready(function() {
+      $('#startSpeechButton').hover(
+        function() {
+          console.log("Hover in");
+          $(this).next('.tooltip').css('display', 'block');  // 明示的にdisplayをblockに設定
+        }, 
+        function() {
+          console.log("Hover out");
+          $(this).next('.tooltip').css('display', 'none');  // 明示的にdisplayをnoneに設定
+        }
+      );
+    });
   </script>
 </body>
 </html>
+
