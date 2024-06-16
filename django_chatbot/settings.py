@@ -152,53 +152,16 @@ PARQUET_FILE_PATH = os.path.join(BASE_DIR, 'common', 'data', 'output_data_all.pa
 FAISS_INDEX_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all.idx')
 FAISS_INDEX_SUMMARY_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all_summary.idx')
 
-# ロギング　（本番環境用）  
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-
-#     # ロガーの設定
-#     'loggers': {
-#         # Djangoが利用するロガー
-#         'django': {
-#             'handlers': ['file'],
-#             'level': 'INFO',
-#         },
-#         # diaryアプリケーションが利用するロガー
-#         'diary': {
-#             'handlers': ['file'],
-#             'level': 'INFO',
-#         },
-#     },
-
-#     # ハンドラの設定
-#     'handlers': {
-#         'file': {
-#             'level': 'INFO',
-#             'class': 'logging.handlers.TimedRotatingFileHandler',
-#             'filename': os.path.join(BASE_DIR, 'logs', 'django.log'), 
-#             'formatter': 'prod',
-#             'when': 'D',  # ログローテーション(新しいファイルへの切り替え)間隔の単位(D=日)
-#             'interval': 1,  # ログローテーション間隔(1日単位)
-#             'backupCount': 7,  # 保存しておくログファイル数
-#             'delay': True,  # delayオプションを追加
-#         },
-#     },
-
-#     # フォーマッタの設定
-#     'formatters': {
-#         'prod': {
-#             'format': '\t'.join([
-#                 '%(asctime)s',
-#                 '[%(levelname)s]',
-#                 '%(pathname)s(Line:%(lineno)d)',
-#                 '%(message)s'
-#             ])
-#         },
-#     }
-# }
-
-# ロギング　（開発環境用）
+# 
+# Herokuのファイルシステムは一時的であり、アプリケーションの再起動やデプロイのたびにリセットされるため、
+# ファイルにログを保存するのは適していません。具体的には、以下の点が問題となります。
+# 1. 一時的なファイルシステム: Herokuでは、ファイルシステムが一時的であり、アプリケーションの再起動やデプロイのたびにリセット
+# 　　されるため、ファイルにログを保存するのは適していません。具体的には、以下の点が問題となります：
+# 2. ログの保存場所: Herokuでは、ログは標準出力（コンソール）に出力するのが一般的です。
+# 　　これにより、Herokuのログ機能を通じてログを確認できます。
+# 上記の理由から、Herokuではファイルにログを保存するのではなく、標準出力（コンソール）に出力するように設定します。
+#  
+# ロギング　（Heroku用）
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -207,22 +170,21 @@ LOGGING = {
     'loggers': {
         # Djangoが利用するロガー
         'django': {
-            'handlers': ['file'],
+            'handlers': ['console'], 
             'level': 'INFO',
         },
         # diaryアプリケーションが利用するロガー
         'diary': {
-            'handlers': ['file'],
+            'handlers': ['console'], 
             'level': 'INFO',
         },
     },
 
     # ハンドラの設定
     'handlers': {
-        'file': {
+        'console': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',  # TimedRotatingFileHandlerからFileHandlerに変更
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'class': 'logging.StreamHandler',
             'formatter': 'prod',
         },
     },
