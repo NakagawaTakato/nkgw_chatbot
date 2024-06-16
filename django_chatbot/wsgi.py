@@ -9,7 +9,9 @@ https://docs.djangoproject.com/en/5.0/howto/deployment/wsgi/
 
 import os
 
-import logging  # ロギングモジュールをインポート
+import logging  
+
+import sys
 
 from django.core.wsgi import get_wsgi_application
 
