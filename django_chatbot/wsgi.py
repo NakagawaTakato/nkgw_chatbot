@@ -15,6 +15,16 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_chatbot.settings')
 
+# Heroku固有設定 start    標準出力にログを出力する設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+# Heroku固有設定 end
+
 # ロガーの設定
 
 logger = logging.getLogger('django')

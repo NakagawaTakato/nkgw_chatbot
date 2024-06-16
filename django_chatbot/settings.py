@@ -152,7 +152,7 @@ PARQUET_FILE_PATH = os.path.join(BASE_DIR, 'common', 'data', 'output_data_all.pa
 FAISS_INDEX_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all.idx')
 FAISS_INDEX_SUMMARY_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all_summary.idx')
 
-# 
+# Heroku 固有設定
 # Herokuのファイルシステムは一時的であり、アプリケーションの再起動やデプロイのたびにリセットされるため、
 # ファイルにログを保存するのは適していません。具体的には、以下の点が問題となります。
 # 1. 一時的なファイルシステム: Herokuでは、ファイルシステムが一時的であり、アプリケーションの再起動やデプロイのたびにリセット
