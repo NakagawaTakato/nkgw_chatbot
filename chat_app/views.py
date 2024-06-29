@@ -22,7 +22,7 @@ from common.chatapi_call_first import Chatapi_Call_first
 from django.conf import settings
 
 
-# 初回のUSER質問を受け付ける処理（回答ターゲットをある程度特定させるための処理）
+# 初回表示のタイミングと他の質問内容を確認する時の処理
 def ask_first(request):
     print('@@@@@ views.py : def ask_first @@@@@')
     authenticate_and_get_openai_key(request)
@@ -43,7 +43,7 @@ def ask_first(request):
     return JsonResponse({'responses': bot_responses})
 
 
-# ユーザーの質問に対してボットが回答する通常処理(フリー会話モード)
+# ユーザーの質問に対してボットが回答する通常処理
 def ask(request):
     print('@@@@@ views.py : def ask @@@@@')
     authenticate_and_get_openai_key(request)
@@ -174,12 +174,20 @@ def chat_first_view(request):
     context = {
         'initial_bot_message': (
             '　ご利用ありがとうございます。ご質問に的確にお答えするために、最初にご質問の内容を確認させて頂きます。<br>'
-            '　　 まずは、下記の入力欄に質問内容を入力して送信して下さい。<br>'
-            '　　 事前確認が不要な場合は、会話モードをフリー会話モードに切り替えて下さい。'
+            '　　 まずは、下記の入力欄に質問内容を入力して送信して下さい。'
         )
     }
-    return render(request, 'chat_first.html', context)
+    # clear_process（会話履歴クリア処理）の場合
+    if request.session.get('clear_process') == 'clear_process':
+        del request.session['clear_process']
+        # chat.htmlから連携されるuser_messageを渡さずにレンダリング
+        return render(request, 'chat_first.html', context)
 
+    # chat.htmlから連携される場合は、user_messageを含めてレンダリング
+    user_message = request.GET.get('user_message')
+    if user_message:
+        context['user_message'] = user_message
+    return render(request, 'chat_first.html', context)
 
 def chat_view(request):
     print('@@@@@ views.py : def chat_view @@@@@')
@@ -221,6 +229,8 @@ def clear_history(request):
         del request.session['faiss_index_no']
     if 'faiss_selectedText' in request.session:
         del request.session['faiss_selectedText']
+    # テキストをセッションに保存
+    request.session['clear_process'] =  'clear_process'
     return JsonResponse({'status': 'success'})
 
 
@@ -254,7 +264,7 @@ def authenticate_and_get_openai_key(request):
         print('@@@@@ views.py : api call end @@@@@')
         if response.status_code == 200:
             openai_api_key = response.json()["decrypted_api_key"]
-            # openai.api_key = openai_api_key
+            openai.api_key = openai_api_key
             request.session["openai_api_key"] = openai_api_key  # DjangoのセッションにAPIキーを保存
         else:
             print("認証に失敗しました。")  # 仮のエラーハンドリング

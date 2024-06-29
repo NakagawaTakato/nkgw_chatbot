@@ -25,18 +25,19 @@
             <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
         </select>
       </form>
-      <span class="mode-label">{% trans '　会話モード選択　' %}</span>
+      <!-- // モード選択ボタンの復活時コメントはずす -->
+      <!-- <span class="mode-label">{% trans '　会話モード選択　' %}</span>
       <select id="modeSelect">
         <option value="free">フリー会話モード </option>
         <option value="precheck" selected>事前確認モード</option>
-      </select>
+      </select> -->
       <button class="chatbot-end">Chatbot ends</button>
     </div>
   </div>
   <div class="images-container">
     <div class="image-container-left">
       <img src="{% static 'chat_app/images/roboimage_last.png' %}" alt="上司ロボットの画像" height="100" />
-      <div class="conversation-mode">　事前確認モード</div>
+      <!-- <div class="conversation-mode">　事前確認モード</div> -->
     </div>
     <div class="image-container-right">
       <img src="{% static 'chat_app/images/roboimage_sub.png' %}" alt="部下ロボットの画像" height="100" />
@@ -111,7 +112,6 @@
           </button>
         </div>
         <div class="modal-body">
-          では、ChatBotとのフリー会話モードに切り替えますので、<br>
           質問内容を入力して下さい。
         </div>
         <div class="modal-footer">
@@ -131,7 +131,6 @@
           </button>
         </div>
         <div class="modal-body">
-          では、ChatBotとのフリー会話モードに切り替えて、<br>
           選択されたキーワードで検索して回答します。
         </div>
         <div class="modal-footer">
@@ -229,8 +228,13 @@
 
                           // ボットのメッセージ出力開始 
                           let messageContainer = $('<div>').append('<img src="{% static "chat_app/images/bot.png" %}" alt="Bot" style="height: 20px; width: 20px;"></div>');
-                          messageContainer.append('<div>※ご質問にお答えできる内容を抽出しました。下記の中から選択して下さい。<br>' +
-                            '　該当する内容がない場合は、質問内容を変えて再度送信してみて下さい。</div>');
+                          if (userMessage) {
+                            messageContainer.append('<div>※他の回答候補を抽出しました。下記の中から選択して下さい。<br>' +
+                              '　該当する内容がない場合は、質問内容を変えて再度送信してみて下さい。</div>');
+                          } else {
+                            messageContainer.append('<div>※ご質問にお答えできる内容を抽出しました。下記の中から選択して下さい。<br>' +
+                              '　該当する内容がない場合は、質問内容を変えて再度送信してみて下さい。</div>');
+                          }
                           let responseList = $('<ul id="response-list">');
                           data.responses.forEach(function(response, index) {
                               if (response.text && response.index_no !== undefined) {
@@ -269,7 +273,7 @@
             let dataIndex = $(this).attr('data-index');
             switch (dataIndex) {
                 case 'sel_etc1':
-                    // モーダルを表示してフリー会話モード(chat.html)に切り替える
+                    // モーダルを表示してchat.htmlに切り替える
                     $('#freeChatModal').modal('show'); 
                     // モーダルのOKボタンがクリックされたときに windowChangeClick を呼び出す
                     $('#freeChatModal').on('shown.bs.modal', function () {
@@ -317,7 +321,7 @@
                     let text = $(this).data('text');
                     console.log("選択されたインデックス: ", indexNo);
                     console.log("選択されたテキスト: ", text);
-                    // モーダルを表示してフリー会話モード(chat.html)に切り替える
+                    // モーダルを表示してchat.htmlに切り替える
                     $('#faisssearchModal').modal('show'); 
                     $('#faisssearchModal').on('shown.bs.modal', function () {
                       $('#faisssearchModal .btn-primary').click(function() {
@@ -349,9 +353,10 @@
               let text = $(this).text().match(/\d+\.\s*(.*)/)[1]; 
 
               // モーダルウィンドウの設定
-              $('#customModal .modal-body').text(
-                `フリー会話モードに切り替えて、選択された内容でChatbotへの問い合わせを行います。` +
-                `\n選択された内容が質問入力欄に設定されますが、質問内容は変更できます。`
+              $('#customModal .modal-body').html(
+                `選択された内容でChatbotへの問い合わせを行います。<br>` +
+                `選択された内容が質問入力欄に設定されますが、質問内容は<br>` +
+                `変更できます。質問内容を確認後、送信ボタンを押して下さい。`
               );
               $('#customModal').modal('show');
 
@@ -362,7 +367,6 @@
               });
           });
 
-
           // Enterキーで送信ボタンをクリックするイベントを追加
           $('#messageInput').keydown(function(e) {
               if (e.key === 'Enter' && !e.shiftKey) {    // Shiftキーが押されていないときのみ処理を実行
@@ -371,9 +375,9 @@
               }
           });
 
-          $('#okButton').click(function() {
-            $('#customDialog').modal('hide');
-          });
+          // $('#okButton').click(function() {
+          //   $('#customDialog').modal('hide');
+          // });
 
           $('#cancelButton').click(function() {
             $('#customDialog').modal('hide');
@@ -383,26 +387,34 @@
             $('#customDialog').modal('show');             // カスタムダイアログを表示
           });
 
-          $('#okButton').click(function() {
+          $('#okButton').off('click').click(function() {
             $('#customDialog').modal('hide');
             // OKボタンがクリックされたときに会話履歴をクリア
             localStorage.removeItem('messages');
-            // OKボタンがクリックされたときに会話回数をクリア
             localStorage.removeItem('chatCount'); 
-            console.log("通過 localStorage.remove");
+            localStorage.removeItem('userMessage');
             $.ajax({
               type: "POST",
               url: '/chat_app/clear_history/',            // clear_history関数に対応するURL
               headers: { "X-CSRFToken": csrfToken },
               success: function() {
-                console.log("通過 /chat_app/clear_history/");
-                // window.open('','_self').close();
                 window.location.reload();                 // ページをリロード
               }
             });
           });
       });
 
+      // ページロード時に Chat.htmlからの引継ぎMSG:user_message が存在する場合、
+      // 自動入力して送信ボタンをクリック
+      let userMessage = "{{ user_message|escapejs }}";
+      if (userMessage) {
+        $('#messageInput').val(userMessage);  // テキストエリアに自動入力
+        // userMessage をクリア
+        userMessage = ''; 
+        setTimeout(function() {
+          $('#sendButton').click();           // 送信ボタンを自動クリック
+        }, 100); // 100ミリ秒の遅延を追加
+      }
 
       // 選択されたレスポンスのインデックスをPOSTし、その後 chat_view にリダイレクト
       // indexNoを渡すが、単純に画面遷移するだけのパターン
@@ -474,7 +486,7 @@
       }
 
 
-      // 事前確認モード初期表示した時のボットメッセージ出力処理
+      // 初期表示した時のボットメッセージ出力処理
       document.addEventListener('DOMContentLoaded', function() {
         var initialMessage = "{{ initial_bot_message }}";
         var messageContainer = document.getElementById('messages');
@@ -521,8 +533,8 @@
         textElement.innerHTML = initialMessage;
         var fullText = textElement.textContent;
         typeWriter(fullText, 0, function() {
-            // すべてのテキストが表示された後に実行する処理
-            console.log("全て表示完了");
+          // すべてのテキストが表示された後に実行する処理
+          console.log("全て表示完了");
         });
 
         localStorage.setItem('initialMessageShown', 'true');
@@ -561,15 +573,15 @@
         });
       }
 
-
-      document.getElementById('modeSelect').addEventListener('change', function() {
-        var mode = this.value;
-        if (mode === 'free') {
-          window.location.href = '/chat_app/chat/';
-        } else if (mode === 'precheck') {
-          // 処理なし
-        }
-      });
+      // モード選択ボタンの復活時コメントはずす
+      // document.getElementById('modeSelect').addEventListener('change', function() {
+      //  var mode = this.value;
+      //  if (mode === 'free') {
+      //    window.location.href = '/chat_app/chat/';
+      //  } else if (mode === 'precheck') {
+      //    // 処理なし
+      //  }
+      // });
   </script>
 </body>
 </html>

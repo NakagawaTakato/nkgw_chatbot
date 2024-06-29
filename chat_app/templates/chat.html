@@ -27,18 +27,19 @@
             <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
         </select>
       </form>
-      <span class="mode-label">{% trans '　会話モード選択　' %}</span>
+      <!-- // モード選択ボタンの復活時コメントはずす -->
+      <!--<span class="mode-label">{% trans '　会話モード選択　' %}</span>
       <select id="modeSelect">
         <option value="free" selected>フリー会話モード</option>
         <option value="precheck">事前確認モード</option>
-      </select>
+      </select> -->
       <button class="chatbot-end">Chatbot ends</button>
     </div>
   </div>
   <div class="images-container">
     <div class="image-container-left">
       <img src="{% static 'chat_app/images/roboimage_last.png' %}" alt="上司ロボットの画像" height="100" />
-      <div class="conversation-mode">フリー会話モード</div>
+      <!-- <div class="conversation-mode">フリー会話モード</div> -->
     </div>
     <div class="image-container-right">
       <img src="{% static 'chat_app/images/roboimage_sub.png' %}" alt="部下ロボットの画像" height="100" />
@@ -78,7 +79,6 @@
         </div>
           <div class="modal-body">
             {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
-            {% trans "会話モードは、事前確認モードになります。" %}<br>
             {% trans "問題なければ、OKボタンを押して下さい。" %}
           </div>
         <div class="modal-footer">
@@ -221,7 +221,7 @@
               if (data.show_history_limit_message) {
                 $('#myModal').modal('show');
               }
-              function typeMessage(message, index, messageContainer) {
+              function typeMessage(message, index, messageContainer, callback) { //%%change%%
                   if (index < message.length) {                 // メッセージの終わりまで到達していない場合
                       if (message[index] === '\n') {            // 改行コードがある場合は、次の行に出力
                           $(messageContainer).append('<br>');   // 改行を追加
@@ -244,15 +244,55 @@
                       // 次の文字を追加するためにタイマーを設定
                       // 再帰的に関数を呼び出し、次の文字を処理  15ミリ秒ごとに次の文字を追加
                       setTimeout(function() {
-                          typeMessage(message, index + 1, messageContainer);
+                          typeMessage(message, index + 1, messageContainer, callback);
                       }, 15);
                   } else {
                       $('#messages').append('<br><hr>');          // メッセージの終わりに改行と区切り線を追加
                       // メッセージの出力が完了したら、localStorageに保存
                       localStorage.setItem('messages', JSON.stringify($('#messages').html()));
-                      $('#loadingIndicator').hide();              // インジケータを非表示
-                      window.scroll(10000, 10000);                  // 画面最下部に移動
+                      $('#loadingIndicator').hide();              // インジケータを非表示                      
                       // setTimeout(toggleScrollButtons, 100);       // ScrollButton表示判断
+                      if (typeof callback === 'function') {
+                        callback();
+                      }
+                      // 画像パスが含まれている場合、ファイル名を表示
+                      if (data.images && data.images.length > 0) {
+                        data.images.forEach(function(imagePath) {
+                            // ファイル名を取得
+                            var fileName = imagePath.split('/').pop();
+                            // ファイル名を表示する要素を作成
+                            var fileNameElement = $('<a>', {
+                                text: fileName,
+                                href: imagePath,
+                                target: '_blank',                // 新しいタブで開く
+                                css: {
+                                    display: 'block',            // ブロック要素として表示
+                                    margin: '5px 0',             // 余白を設定
+                                    color: 'blue',               // リンクの色
+                                    width: 'fit-content',          // リンクの幅をコンテンツに合わせる
+                                    textDecoration: 'underline'  // 下線をつける
+                                }
+                              }).hover(
+                                function() {
+                                    $(this).css('font-weight', 'bold');  // マウスを当てたときに太字にする
+                                },
+                                function() {
+                                    $(this).css('font-weight', 'normal');  // マウスを外したときに通常の太さに戻す
+                                }
+                            );
+                            $('#messages').append(fileNameElement);
+                        });
+                      }
+                      // 画像URLの処理が完了した後にボタンを表示
+                      $('#messages').append(`
+                      <button id="checkOtherResponses" class="btn btn-info mt-3">他の回答内容を確認してみる</button>
+                      `); 
+                      $('#checkOtherResponses').click(function() {
+                      if (userMessage) {
+                        window.location.href = `/chat_app/chat_first/?user_message=${userMessage}`;
+                      } 
+                      });
+                      window.scroll(10000, 10000);                  // 画面最下部に移動
                   }
               }
 
@@ -261,37 +301,10 @@
               $('#messages').append(messageContainer);
               let textContainer = $('<div>');                     // 新しい行にメッセージを追加するためのコンテナ
               $('#messages').append(textContainer);
-              typeMessage(data.message, 0, textContainer);        // メッセージと開始インデックス（0）を渡して関数を呼び出し
+              // typeMessage(data.message, 0, textContainer);        // メッセージと開始インデックス（0）を渡して関数を呼び出し
               // setTimeout(toggleScrollButtons, 100);               // ScrollButton表示判断
+              typeMessage(data.message, 0, textContainer);
 
-              // 画像パスが含まれている場合、ファイル名を表示
-              if (data.images && data.images.length > 0) {
-                data.images.forEach(function(imagePath) {
-                    // ファイル名を取得
-                    var fileName = imagePath.split('/').pop();
-                    // ファイル名を表示する要素を作成
-                    var fileNameElement = $('<a>', {
-                        text: fileName,
-                        href: imagePath,
-                        target: '_blank',                // 新しいタブで開く
-                        css: {
-                            display: 'block',            // ブロック要素として表示
-                            margin: '5px 0',             // 余白を設定
-                            color: 'blue',               // リンクの色
-                            width: 'fit-content',          // リンクの幅をコンテンツに合わせる
-                            textDecoration: 'underline'  // 下線をつける
-                        }
-                      }).hover(
-                        function() {
-                            $(this).css('font-weight', 'bold');  // マウスを当てたときに太字にする
-                        },
-                        function() {
-                            $(this).css('font-weight', 'normal');  // マウスを外したときに通常の太さに戻す
-                        }
-                    );
-                    $('#messages').append(fileNameElement);
-                });
-            }
           },
           error: function(xhr, status, errorThrown) {
               console.error("AJAX Error:", status, errorThrown);
@@ -312,8 +325,9 @@
             });
           }
       });
+
+      const userMessage = message;           // 他の回答検索用にメッセージをクリアする前に保存
       $('#messageInput').val('');            // 入力フィールドをクリア
-      // setTimeout(toggleScrollButtons, 100);  // ScrollButton表示判断
     }
 
 
@@ -350,14 +364,15 @@
       });
     }
 
-    document.getElementById('modeSelect').addEventListener('change', function() {
-        var mode = this.value;
-        if (mode === 'precheck') {
-          window.location.href = '/chat_app/chat_first/';
-        } else if (mode === 'free') {
-          // 処理なし
-        }
-    });
+    // モード選択ボタンの復活時コメントはずす
+    // document.getElementById('modeSelect').addEventListener('change', function() {
+    //     var mode = this.value;
+    //     if (mode === 'precheck') {
+    //       window.location.href = '/chat_app/chat_first/';
+    //     } else if (mode === 'free') {
+    //       // 処理なし
+    //     }
+    // });
 
 
     // 音声入力ボタンのクリックイベント -- START -----------------------------------------------
