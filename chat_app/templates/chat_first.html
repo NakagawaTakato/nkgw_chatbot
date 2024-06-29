@@ -231,6 +231,7 @@
                           if (userMessage) {
                             messageContainer.append('<div>※他の回答候補を抽出しました。下記の中から選択して下さい。<br>' +
                               '　該当する内容がない場合は、質問内容を変えて再度送信してみて下さい。</div>');
+                            userMessage = ''; 
                           } else {
                             messageContainer.append('<div>※ご質問にお答えできる内容を抽出しました。下記の中から選択して下さい。<br>' +
                               '　該当する内容がない場合は、質問内容を変えて再度送信してみて下さい。</div>');
@@ -410,7 +411,7 @@
       if (userMessage) {
         $('#messageInput').val(userMessage);  // テキストエリアに自動入力
         // userMessage をクリア
-        userMessage = ''; 
+        // userMessage = ''; 
         setTimeout(function() {
           $('#sendButton').click();           // 送信ボタンを自動クリック
         }, 100); // 100ミリ秒の遅延を追加
