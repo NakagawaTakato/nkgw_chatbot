@@ -36,13 +36,11 @@ body {
 }
 @media (min-width: 882px) and (max-width: 932px) {
   .chat-header {
-      width: 85%;
-      margin-left: 40px;
+    padding-top: 120px;
   }
 }
 .scroll-top-button,
 .scroll-bottom-button {
-  display: none;    /* 初期状態で非表示 */
   width: 150px;
 }
 .scroll-top-button { 
@@ -54,6 +52,18 @@ body {
   position: fixed;
   top: 300px;
   right: 50px;
+}
+@media (min-width: 344px) and (max-width: 430px) {
+  .scroll-top-button,
+  .scroll-bottom-button {
+    display: none !important;
+  }
+}
+@media (min-width: 882px) and (max-width: 932px) {
+  .scroll-top-button,
+  .scroll-bottom-button {
+    display: none !important;
+  }
 }
 .chat-window {
   flex-grow: 1;
@@ -140,11 +150,21 @@ body {
     display: none;
   }
 }
+@media (min-width: 882px) and (max-width: 932px) {
+  .image-container-left {
+    display: none;
+  }
+}
 .image-container-right {
   margin-left: auto;  /* 左のマージンを自動にして右寄せにする */
   margin-right: 50px; /* 右側の余白を調整 */
 }
 @media (min-width: 344px) and (max-width: 430px) {
+  .image-container-right {
+    display: none;
+  }
+}
+@media (min-width: 882px) and (max-width: 932px) {
   .image-container-right {
     display: none;
   }
