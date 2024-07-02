@@ -29,6 +29,17 @@ body {
   color: white;
   font-size: 30px;
 }
+@media (min-width: 344px) and (max-width: 430px) {
+  .chat-header {
+    padding-top: 120px;
+  }
+}
+@media (min-width: 882px) and (max-width: 932px) {
+  .chat-header {
+      width: 85%;
+      margin-left: 40px;
+  }
+}
 .scroll-top-button,
 .scroll-bottom-button {
   display: none;    /* 初期状態で非表示 */
@@ -55,14 +66,14 @@ body {
 
 .input-group {
   display: flex;
-  align-items: center; ;
-  padding: 5px 0px; 
+  align-items: center;
+  width:  85%;
+  padding: 5px 0px;
   background-color: #00A2E8;
-  position: fixed; 
-  bottom: 0; 
-  width:  75%; 
-  box-sizing: border-box; 
-} 
+  position: fixed;
+  bottom: 0;
+  box-sizing: border-box;
+}
 .input-group textarea {
   box-sizing: border-box;
   width: calc(100% - 100px - 20px); /* ボタンの幅、ボタンの左右のパディング、.input-groupの左右のパディングを考慮 */
@@ -124,9 +135,19 @@ body {
 .image-container-left {
   margin-left: 50px;  /* 左側に20pxのマージンを追加 */
 }
+@media (min-width: 344px) and (max-width: 430px) {
+  .image-container-left {
+    display: none;
+  }
+}
 .image-container-right {
   margin-left: auto;  /* 左のマージンを自動にして右寄せにする */
   margin-right: 50px; /* 右側の余白を調整 */
+}
+@media (min-width: 344px) and (max-width: 430px) {
+  .image-container-right {
+    display: none;
+  }
 }
 #messageInput {
   height: 45px;       /* テキスト入力域の高さ調整はここ */
