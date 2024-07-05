@@ -29,7 +29,13 @@ body {
   color: white;
   font-size: 30px;
 }
+/* iFUSION-AIChatbotの文字を下にする値 */
 @media (min-width: 344px) and (max-width: 430px) {
+  .chat-header {
+    padding-top: 120px;
+  }
+}
+@media (min-width: 724px) and (max-width: 789px) {
   .chat-header {
     padding-top: 120px;
   }
@@ -53,7 +59,14 @@ body {
   top: 300px;
   right: 50px;
 }
+/* モバイル端末のスクロールボタンを非表示 */
 @media (min-width: 344px) and (max-width: 430px) {
+  .scroll-top-button,
+  .scroll-bottom-button {
+    display: none !important;
+  }
+}
+@media (min-width: 724px) and (max-width: 789px) {
   .scroll-top-button,
   .scroll-bottom-button {
     display: none !important;
@@ -145,7 +158,13 @@ body {
 .image-container-left {
   margin-left: 50px;  /* 左側に20pxのマージンを追加 */
 }
+/* 左の写真を削除 */
 @media (min-width: 344px) and (max-width: 430px) {
+  .image-container-left {
+    display: none;
+  }
+}
+@media (min-width: 724px) and (max-width: 789px) {
   .image-container-left {
     display: none;
   }
@@ -159,7 +178,13 @@ body {
   margin-left: auto;  /* 左のマージンを自動にして右寄せにする */
   margin-right: 50px; /* 右側の余白を調整 */
 }
+/* 右の写真を削除 */
 @media (min-width: 344px) and (max-width: 430px) {
+  .image-container-right {
+    display: none;
+  }
+}
+@media (min-width: 724px) and (max-width: 789px) {
   .image-container-right {
     display: none;
   }
