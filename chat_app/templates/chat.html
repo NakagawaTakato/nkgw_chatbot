@@ -15,8 +15,31 @@
 <link rel="icon" href="{% static 'icon/favicon.ico' %}">
 <!-- Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+<style>
+  #windowSize {
+    position: fixed;
+    bottom: 100px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+  }
+</style>
 </head>
 <body>
+  <div id="windowSize"></div>
+  <script>
+    function updateWindowSize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      document.getElementById('windowSize').innerText = `Width: ${width}px, Height: ${height}px`;
+    }
+
+    window.addEventListener('resize', updateWindowSize);
+    document.addEventListener('DOMContentLoaded', updateWindowSize);
+  </script>
+
   <div class="header">
     <div>
       <form action="{% url 'set_language' %}" method="post">

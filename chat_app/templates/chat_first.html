@@ -13,8 +13,30 @@
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 <!-- APL tab icon -->
 <link rel="icon" href="{% static 'icon/favicon.ico' %}">
+<style>
+  #windowSize {
+    position: fixed;
+    bottom: 100px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+  }
+</style>
 </head>
 <body>
+  <div id="windowSize"></div>
+  <script>
+    function updateWindowSize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      document.getElementById('windowSize').innerText = `Width: ${width}px, Height: ${height}px`;
+    }
+
+    window.addEventListener('resize', updateWindowSize);
+    document.addEventListener('DOMContentLoaded', updateWindowSize);
+  </script>
   <div class="header">
     <div>
       <form action="{% url 'set_language' %}" method="post">
