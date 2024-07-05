@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 <!-- APL tab icon -->
 <link rel="icon" href="{% static 'icon/favicon.ico' %}">
-<style>
+<!-- <style>
   #windowSize {
     position: fixed;
     bottom: 100px;
@@ -23,10 +23,10 @@
     padding: 5px;
     border-radius: 5px;
   }
-</style>
+</style> -->
 </head>
 <body>
-  <div id="windowSize"></div>
+  <!-- <div id="windowSize"></div>
   <script>
     function updateWindowSize() {
       const width = window.innerWidth;
@@ -36,7 +36,8 @@
 
     window.addEventListener('resize', updateWindowSize);
     document.addEventListener('DOMContentLoaded', updateWindowSize);
-  </script>
+  </script> -->
+
   <div class="header">
     <div>
       <form action="{% url 'set_language' %}" method="post">

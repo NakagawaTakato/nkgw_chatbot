@@ -244,6 +244,21 @@ body {
   border: 3px solid #ccc;      /* 枠線を薄く表示 */
   cursor: pointer;               /* マウスカーソルをポインターに */
 }
+@media (min-width: 344px) and (max-width: 430px) {
+  #startSpeechButton {
+    display: none;
+  }
+}
+@media (min-width: 724px) and (max-width: 789px) {
+  #startSpeechButton {
+    display: none;
+  }
+}
+@media (min-width: 882px) and (max-width: 932px) {
+  #startSpeechButton {
+    display: none;
+  }
+}
 .tooltip {
   position: absolute;
   top: -40%;                      /* ボタンの中央に合わせる */
