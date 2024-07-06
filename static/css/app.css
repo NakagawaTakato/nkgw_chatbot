@@ -30,7 +30,7 @@ body {
   font-size: 30px;
 }
 /* iFUSION-AIChatbotの文字を下にする値 */
-/* @media (min-width: 344px) and (max-width: 430px) {
+@media (min-width: 344px) and (max-width: 430px) {
   .chat-header {
     padding-top: 120px;
   }
@@ -44,7 +44,7 @@ body {
   .chat-header {
     padding-top: 120px;
   }
-} */
+} 
 
 .scroll-top-button,
 .scroll-bottom-button {
@@ -61,7 +61,7 @@ body {
   right: 50px;
 }
 /* モバイル端末のスクロールボタンを非表示 */
-/*@media (min-width: 344px) and (max-width: 430px) {
+@media (min-width: 344px) and (max-width: 430px) {
   .scroll-top-button,
   .scroll-bottom-button {
     display: none !important;
@@ -78,7 +78,7 @@ body {
   .scroll-bottom-button {
     display: none !important;
   }
-} */
+} 
 .chat-window {
   flex-grow: 1;
   padding: 20px;
