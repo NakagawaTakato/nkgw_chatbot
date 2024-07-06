@@ -60,7 +60,7 @@ body {
   right: 50px;
 }
 /* モバイル端末のスクロールボタンを非表示 */
-@media (min-width: 344px) and (max-width: 430px) {
+/*@media (min-width: 344px) and (max-width: 430px) {
   .scroll-top-button,
   .scroll-bottom-button {
     display: none !important;
@@ -77,7 +77,7 @@ body {
   .scroll-bottom-button {
     display: none !important;
   }
-}
+} */
 .chat-window {
   flex-grow: 1;
   padding: 20px;
