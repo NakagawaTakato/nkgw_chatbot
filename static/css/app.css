@@ -48,6 +48,7 @@ body {
 
 .scroll-top-button,
 .scroll-bottom-button {
+  display: none;  /* 初期状態では非表示 */  
   width: 150px;
 }
 .scroll-top-button { 
