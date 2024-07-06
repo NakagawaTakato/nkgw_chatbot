@@ -30,7 +30,7 @@ body {
   font-size: 30px;
 }
 /* iFUSION-AIChatbotの文字を下にする値 */
-@media (min-width: 344px) and (max-width: 430px) {
+/* @media (min-width: 344px) and (max-width: 430px) {
   .chat-header {
     padding-top: 120px;
   }
@@ -44,7 +44,8 @@ body {
   .chat-header {
     padding-top: 120px;
   }
-}
+} */
+
 .scroll-top-button,
 .scroll-bottom-button {
   width: 150px;
