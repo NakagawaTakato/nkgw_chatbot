@@ -4,6 +4,7 @@ from . import views
 print('@@@@@ chat_app/urls.py  @@@@@')   
 
 urlpatterns = [
+    path('set_language/', views.set_language, name='set_language'),      # 言語設定用のビュー
     path('ask_first/', views.ask_first, name='ask_first'),               # 初回の質問用のビュー
     path('chat_first/', views.chat_first_view, name='chat_first_view'),  # 初回チャットビュー
     path('ask/', views.ask, name='ask'),                                 # 通常の質問用のビュー

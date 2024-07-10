@@ -202,6 +202,3 @@ LOGGING = {
         },
     }
 }
-
-# セッションエンジンをデータベースに変更
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
