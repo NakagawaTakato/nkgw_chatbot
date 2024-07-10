@@ -19,6 +19,8 @@ from django.views.decorators.http import require_http_methods
 from common.chatapi_call import Chatapi_Call
 # chatapi_call_first.py から クラスをインポート
 from common.chatapi_call_first import Chatapi_Call_first
+from common.translator_ja import Translator_ja
+from common.translator_en import Translator_en
 from django.conf import settings
 
 
@@ -28,6 +30,11 @@ def ask_first(request):
     authenticate_and_get_openai_key(request)
     openai.api_key = request.session["openai_api_key"]
     user_message = request.POST.get('message') 
+
+    # translatorクラスを使用してuser_messageを日本語に翻訳
+    translator_ja = Translator_ja(openai.api_key)
+    user_message = translator_ja.translate_to_japanese(user_message)
+
     application_id = "django_chatapp1"
     # parquet_path(全学習データ)とfaiss_path(全学習データ要約分）を
     # settingsから取得するように修正
@@ -49,6 +56,11 @@ def ask(request):
     authenticate_and_get_openai_key(request)
     openai.api_key = request.session["openai_api_key"]
     user_message = request.POST.get('message')
+
+    # translatorクラスを使用してuser_messageを日本語に翻訳
+    translator_ja = Translator_ja(openai.api_key)    
+    user_message = translator_ja.translate_to_japanese(user_message)
+
     application_id = "django_chatapp2"
 
     # セッションに 'select_index' が存在する（聞きたいことが指定された）場合
@@ -83,10 +95,19 @@ def ask(request):
     if 'faiss_index_no' in request.session:
         del request.session['faiss_index_no']
 
+    # 言語が英語の場合、画像パスを翻訳する対応
+    current_language = request.session.get('_language', 'ja')
+    translated_image_paths = image_paths_to_display
+    if current_language == 'en':
+        translator_en = Translator_en(openai.api_key)
+        translated_image_paths = [translator_en.translate_to_english(path) for path in image_paths_to_display]
+
     return JsonResponse({
-        'message': bot_response,           # ボットからのテキストレスポンス
-        'images': image_paths_to_display,  # 画像パスのリスト
+        'message': bot_response,                              # ボットからのテキストレスポンス
+        'images': image_paths_to_display,                     # 元の画像パスのリスト
+        'translated_images': translated_image_paths,          # 翻訳された画像パスのリスト
         'show_history_limit_message': history_limit_message,  # 会話履歴の制限メッセージの表示フラグ
+        'current_language': current_language,                 # 現在の言語設定
     })
 
 
@@ -171,12 +192,29 @@ def submit_selected_responses(request):
 
 def chat_first_view(request):
     print('@@@@@ views.py : def chat_first_view @@@@@')
-    context = {
-        'initial_bot_message': (
-            '　ご利用ありがとうございます。ご質問に的確にお答えするために、最初にご質問の内容を確認させて頂きます。<br>'
-            '　　 まずは、下記の入力欄に質問内容を入力して送信して下さい。'
+
+    # セッションの言語設定
+    user_language = request.session.get('_language', settings.LANGUAGE_CODE)
+    # 画面と連動する言語設定
+    request.LANGUAGE_CODE = user_language  
+    print('@@@@@ views.py : def chat_first_view @@@@@ session_language : ', request.session.get('_language', '未設定'))
+    print('@@@@@ views.py : def chat_first_view @@@@@ html_language    : ', request.LANGUAGE_CODE)
+
+    if user_language == 'ja':
+        initial_bot_message = (
+            '　ご利用ありがとうございます。ご質問に的確にお答えするために、最初にご質問の内容を確認させて頂きます。'
+            'まずは、下記の入力欄に質問内容を入力して送信して下さい。'
         )
+    else:
+        initial_bot_message = (
+            '　Thank you for using our service. To answer your questions accurately, we will first confirm the content of your question.'
+            'Please enter your question in the input field below and send it.'
+        )
+    context = {
+        'initial_bot_message': initial_bot_message,
+        'current_language': user_language
     }
+
     # clear_process（会話履歴クリア処理）の場合
     if request.session.get('clear_process') == 'clear_process':
         del request.session['clear_process']
@@ -188,6 +226,7 @@ def chat_first_view(request):
     if user_message:
         context['user_message'] = user_message
     return render(request, 'chat_first.html', context)
+
 
 def chat_view(request):
     print('@@@@@ views.py : def chat_view @@@@@')
@@ -202,7 +241,12 @@ def set_language(request):
             user_language = form.cleaned_data['language']
             translation.activate(user_language)
             request.session['_language'] = user_language
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+            print(f'言語設定: {user_language}')
+            print(f'セッション言語: {request.session.get("_language")}')
+            print(f'アクティブ言語: {translation.get_language()}')
+    response = redirect(request.META.get('HTTP_REFERER', '/'))
+    response.set_cookie(settings.LANGUAGE_COOKIE_NAME, user_language)
+    return response
 
 
 def clear_history(request):

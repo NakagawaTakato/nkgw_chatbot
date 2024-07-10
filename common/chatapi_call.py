@@ -33,13 +33,11 @@ class Chatapi_Call:
     # parquet データを読み込む
     def load_parquet_file(self):
         print('@@@@@ common/chatapi_call.py : def load_parquet_file  @@@@@') 
-        print('@@@@@ self.parquet_path  @@@@@', self.parquet_path)
         return pd.read_parquet(self.parquet_path)
 
     # Faissインデックスを読み込む
     def load_faiss_index(self):
         print('@@@@@ common/chatapi_call.py : load_faiss_index  @@@@@')
-        print('@@@@@ self.faiss_path  @@@@@', self.faiss_path)
         return faiss.read_index(self.faiss_path)
 
 
@@ -83,17 +81,24 @@ class Chatapi_Call:
         user_history.append(self.user_message)
         self.request.session['past'] = user_history
 
-        # chatgpt api direct call
         print("self.user_message", self.user_message)
         print("conversation_history", conversation_history)
-        bot_response = self.load_conversation(self.user_message, conversation_history)
+
+        # 言語選択に応じて適切なメソッドを呼び出す
+        if self.request.session.get('_language') == 'en':
+            # chatgpt api direct call
+            bot_response = self.load_conversation_en(self.user_message, conversation_history)
+            print("bot_response", bot_response)
+        else:
+            # chatgpt api direct call
+            bot_response = self.load_conversation(self.user_message, conversation_history)
 
         # APIからの応答をチェック
         if "回答不能" in bot_response:
             bot_response = (
             '申し訳ありませんが、ご質問頂いた内容についての情報を持ち合わせていませんので\n'
             'ご回答できません。必要であれば弊社のサポートチームへ連絡をお願い致します。\n'
-            '(Tel:xxxxxx, Email:xxxxx@imprex.co.jp)'
+            '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
         )
 
         # チャットボット側の履歴に追加する
@@ -154,6 +159,7 @@ class Chatapi_Call:
 
 
     # USER入力のベクトル化を行う関数 parquet からデータ取得 
+    # text-embedding-3-large  text-embedding-3-medium  text-embedding-3-small
     def get_embedding(self, text, model="text-embedding-3-large"):
         print('@@@@@ common/chatapi_call.py : def get_embedding  @@@@@')
 
@@ -168,7 +174,7 @@ class Chatapi_Call:
 
     # テキストと画像パスを取得
     def retrieve_text_and_images(self, index):
-        print('@@@@@ common/chatapi_call.py : def retrieve_text_and_images  @@@@@')
+        # print('@@@@@ common/chatapi_call.py : def retrieve_text_and_images  @@@@@')
 
         filtered_df = self.parquet_df[self.parquet_df['index-no'] == index]
         if not filtered_df.empty:
@@ -182,7 +188,7 @@ class Chatapi_Call:
 
     # gpt-4-1106-preview  gpt-3.5-turbo-16k gpt-4-turbo-2024-04-09 gpt-4o
     def createCompletion(self, prompt):
-        print('@@@@@ common/chatapi_call.py : def createCompletion  @@@@@')
+        # print('@@@@@ common/chatapi_call.py : def createCompletion  @@@@@')
 
         try:
             response = openai.chat.completions.create(
@@ -197,7 +203,7 @@ class Chatapi_Call:
 
 
     def load_conversation(self, user_message, conversation_history):
-        print('@@@@@ common/chatapi_call.py : def load_conversation  @@@@@')
+        # print('@@@@@ common/chatapi_call.py : def load_conversation  @@@@@')
 
         history = conversation_history
         system_msg = f"""
@@ -208,9 +214,10 @@ class Chatapi_Call:
         # 制約条件:
         - ユーザーからの質問に対して、回答時の参考情報を参考にして回答文を生成して下さい。
         - 回答内容は、ユーザーからの最新質問に対してのみ回答して下さい。
-        - 回答できないと判断した場合は、回答文は「回答不能」とセットして下さい。
+        - 回答できないと判断した場合は、回答文に「回答不能」とセットして下さい。
         - 回答内容には、回答時の参考情報の中に含まれているユーザーからの質問には回答しないで下さい。
         - 回答は見出し、箇条書き、表などを使って人間が読みやすく表現してください。
+        - **ユーザーの質問の言語に関わらず、常に日本語で回答してください。**
 
         #回答時の参考情報:
         {history}
@@ -225,11 +232,42 @@ class Chatapi_Call:
         # プロンプトを生成し、Completion APIを使用して回答を生成します
         completion = self.createCompletion(prompt)
         return completion
-    
-    
+
+
+    def load_conversation_en(self, user_message, conversation_history):
+        # print('@@@@@ common/chatapi_call.py : def load_conversation_en  @@@@@')
+
+        history = conversation_history
+        system_msg = f"""
+        You are an excellent customer support representative for Impress Corporation's package products.
+        Please answer the latest question from the user as a chat bot for Impress Corporation's inquiry desk,
+        following the constraints below. Please provide the response in English.
+        ---
+        # Constraints:
+        - Generate the response text based on the reference information at the time of response to the user's question.
+        - Only respond to the user's latest question.
+        - If you determine that you cannot answer, set the response text to "Unable to answer".
+        - Do not respond to questions from users that are included in the reference information at the time of response.
+        - Express the response in a way that is easy for humans to read, using headings, bullet points, tables, etc.
+        - **Always respond in English, regardless of the language of the user's question.**
+
+        # Reference information at the time of response:
+        {history}
+
+        # Response text:
+        """
+
+        prompt = [
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_message}]
+
+        # Generate the response using the Completion API
+        completion = self.createCompletion(prompt)
+        return completion
+
+
     def log_conversation(self, user_email, user_or_bot, message):
-        print('@@@@@ common/chatapi_call.py : def log_conversation  @@@@@')
-        
+
         # ルートディレクトリ直下の 'conversation_logs.csv' へのパスを指定
         csv_file_path = os.path.join('conversation_logs.csv')
         conversation_count = self.request.session.get('conversation_count', 0)

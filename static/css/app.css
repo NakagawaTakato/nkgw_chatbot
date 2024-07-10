@@ -44,11 +44,10 @@ body {
   .chat-header {
     padding-top: 120px;
   }
-} 
-
+}
 .scroll-top-button,
 .scroll-bottom-button {
-  display: none;  /* 初期状態では非表示 */  
+  display: none; /* 初期表示では非表示 */
   width: 150px;
 }
 .scroll-top-button { 
@@ -79,7 +78,7 @@ body {
   .scroll-bottom-button {
     display: none !important;
   }
-} 
+}
 .chat-window {
   flex-grow: 1;
   padding: 20px;
@@ -280,7 +279,7 @@ body {
 .tooltip {
   position: absolute;
   top: -40%;                      /* ボタンの中央に合わせる */
-  left: 75%;                    /* ボタンの右端から開始 */
+  left: 67%;                    /* ボタンの右端から開始 */
   transform: translateX(-10%);   /* 中央揃え */
   background-color: green;
   color: white;

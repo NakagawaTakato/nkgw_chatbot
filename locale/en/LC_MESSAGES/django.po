@@ -1215,8 +1215,8 @@ msgstr ""
 msgid "送信"
 msgstr "Send"
 
-msgid "質問を入力して、送信ボタンを押して下さい"
-msgstr "Please enter your question and press the send button"
+msgid "質問を入力して下さい"
+msgstr "Enter your question"
 
 msgid "言語選択 "
 msgstr "Select language "
@@ -1229,3 +1229,25 @@ msgstr "The conversation history will be cleared when you exit the chatbot."
 
 msgid "問題なければ、OKボタンを押して下さい。"
 msgstr "If there is no problem, press the OK button."
+
+msgid "このマイクボタンのＯＮ／ＯＦＦで音声入力の開始と停止を行います。"
+msgstr "Turning this microphone button ON/OFF starts and stops audio input."
+
+msgid "ご連絡"
+msgstr "contacting"
+
+msgid "会話履歴が10件を超えました。以後、最新10件の会話履歴までを考慮して回答させて頂きます。"
+msgstr "The number of conversation histories has exceeded 10. From now on, we will only respond to your inquiries based on the most recent 10 conversation histories."
+
+msgid "閉じる"
+msgstr "close"
+
+msgid "確認"
+msgstr "confirmation"
+
+msgid "質問内容を入力して下さい。"
+msgstr "Enter your question."
+
+msgid "選択されたキーワードで検索して回答します。"
+msgstr "Search and answer using selected keywords."
+

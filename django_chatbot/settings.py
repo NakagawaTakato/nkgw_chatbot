@@ -12,8 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os 
-import django_on_heroku    # heroku 固有の設定
-import dj_database_url     # heroku 固有の設定
+
+print('@@@@@ django_chatbot/settings.py  @@@@@')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,10 +28,10 @@ SECRET_KEY = 'django-insecure-joxqtmil(o$(+bm15t1vnro9td3wgbig0^+!1ms68aq$scprqn
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ['*']    # ngrok,herokuの設定　
+ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ['*']    # ngrokの設定   ★del
 
-# CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']  # ngrokの固有設定
+#CSRF_TRUSTED_ORIGINS = ['https://*.ngrok-free.app']  # ngrokの固有設定      ★del
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -71,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.i18n',  
             ],
         },
     },
@@ -130,17 +131,11 @@ LANGUAGES = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-# STATIC_URL = '/static/'
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"),]
-
-STATIC_URL = 'static/'                   # heroku 固有の設定
-STATIC_DIR = BASE_DIR / "static"         # heroku 固有の設定
-STATICFILES_DIRS = [STATIC_DIR,]
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"),]
 
 # 画像ファイルが保存されているディレクトリへのパスを追加
 IMAGE_FILE_PATH = os.path.join(BASE_DIR, 'common', 'imagefile')
-
-django_on_heroku.settings(locals())      # heroku 固有の設定
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -152,16 +147,53 @@ PARQUET_FILE_PATH = os.path.join(BASE_DIR, 'common', 'data', 'output_data_all.pa
 FAISS_INDEX_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all.idx')
 FAISS_INDEX_SUMMARY_PATH = os.path.join(BASE_DIR, 'common', 'data', 'faiss_index_all_summary.idx')
 
-# Heroku 固有設定
-# Herokuのファイルシステムは一時的であり、アプリケーションの再起動やデプロイのたびにリセットされるため、
-# ファイルにログを保存するのは適していません。具体的には、以下の点が問題となります。
-# 1. 一時的なファイルシステム: Herokuでは、ファイルシステムが一時的であり、アプリケーションの再起動やデプロイのたびにリセット
-# 　　されるため、ファイルにログを保存するのは適していません。具体的には、以下の点が問題となります：
-# 2. ログの保存場所: Herokuでは、ログは標準出力（コンソール）に出力するのが一般的です。
-# 　　これにより、Herokuのログ機能を通じてログを確認できます。
-# 上記の理由から、Herokuではファイルにログを保存するのではなく、標準出力（コンソール）に出力するように設定します。
-#  
-# ロギング　（Heroku用）
+# ロギング　（本番環境用）
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+
+#     # ロガーの設定
+#     'loggers': {
+#         # Djangoが利用するロガー
+#         'django': {
+#             'handlers': ['file'],
+#             'level': 'INFO',
+#         },
+#         # diaryアプリケーションが利用するロガー
+#         'diary': {
+#             'handlers': ['file'],
+#             'level': 'INFO',
+#         },
+#     },
+
+#     # ハンドラの設定
+#     'handlers': {
+#         'file': {
+#             'level': 'INFO',
+#             'class': 'logging.handlers.TimedRotatingFileHandler',
+#             'filename': os.path.join(BASE_DIR, 'logs', 'django.log'), 
+#             'formatter': 'prod',
+#             'when': 'D',  # ログローテーション(新しいファイルへの切り替え)間隔の単位(D=日)
+#             'interval': 1,  # ログローテーション間隔(1日単位)
+#             'backupCount': 7,  # 保存しておくログファイル数
+#             'delay': True,  # delayオプションを追加
+#         },
+#     },
+
+#     # フォーマッタの設定
+#     'formatters': {
+#         'prod': {
+#             'format': '\t'.join([
+#                 '%(asctime)s',
+#                 '[%(levelname)s]',
+#                 '%(pathname)s(Line:%(lineno)d)',
+#                 '%(message)s'
+#             ])
+#         },
+#     }
+# }
+
+# ロギング　（開発環境用）
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -170,21 +202,22 @@ LOGGING = {
     'loggers': {
         # Djangoが利用するロガー
         'django': {
-            'handlers': ['console'], 
+            'handlers': ['file'],
             'level': 'INFO',
         },
         # diaryアプリケーションが利用するロガー
         'diary': {
-            'handlers': ['console'], 
+            'handlers': ['file'],
             'level': 'INFO',
         },
     },
 
     # ハンドラの設定
     'handlers': {
-        'console': {
+        'file': {
             'level': 'INFO',
-            'class': 'logging.StreamHandler',
+            'class': 'logging.FileHandler',  # TimedRotatingFileHandlerからFileHandlerに変更
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),  
             'formatter': 'prod',
         },
     },

@@ -15,6 +15,7 @@
 <link rel="icon" href="{% static 'icon/favicon.ico' %}">
 <!-- Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+<!-- 画面サイズを表示する場合に下記の指定をする -->
 <!-- <style>
   #windowSize {
     position: fixed;
@@ -28,6 +29,7 @@
 </style> -->
 </head>
 <body>
+  <!-- 画面サイズを表示する場合に下記の指定をする -->
   <!-- <div id="windowSize"></div>
   <script>
     function updateWindowSize() {
@@ -88,7 +90,7 @@
         <button id="startSpeechButton" class="btn btn-success rounded-pill btn-narrow">
           <i class="fas fa-microphone"></i>
         </button>
-        <div class="tooltip" style="display: none;">このマイクボタンのＯＮ／ＯＦＦで音声入力の開始と停止を行います。</div>
+        <div class="tooltip" style="display: none;">{% trans 'このマイクボタンのＯＮ／ＯＦＦで音声入力の開始と停止を行います。' %}</div>
       </div>
     </div>
   </div>
@@ -116,13 +118,13 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title" id="myModalLabel">ご連絡</h4>
+          <h4 class="modal-title" id="myModalLabel">{% trans 'ご連絡' %}</h4>
         </div>
         <div class="modal-body">
-          会話履歴が10件を超えました。以後、最新10件の会話履歴までを考慮して回答させて頂きます。
+          {% trans '会話履歴が10件を超えました。以後、最新10件の会話履歴までを考慮して回答させて頂きます。' %}
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">閉じる</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">{% trans '閉じる' %}</button>
         </div>
       </div>
     </div>
@@ -163,6 +165,14 @@
         let storedMessages = JSON.parse(localStorage.getItem('messages'));
         if (storedMessages) {
             $('#messages').html(storedMessages);
+
+            // ローカルストレージから読み込んだ要素のスタイルを変更（過去履歴はクリック不可にする）
+              $('#messages .clickable-response').css({
+                'text-decoration': 'none',
+                'font-weight': 'normal',
+                'color': 'inherit',
+                'cursor': 'default'
+            }).removeClass('clickable-response');
         }
 
         // chat_first.htmlから連携されたfaiss特定済みの質問文がある場合は、
@@ -262,7 +272,7 @@
                           $(messageContainer).append(message[index]); // 現在の文字を追加
                       }
 
-                      window.scroll(10000, 10000);                  // 画面最下部に移動
+                      window.scroll(10000, 10000);                 // 画面最下部に移動
 
                       // 次の文字を追加するためにタイマーを設定
                       // 再帰的に関数を呼び出し、次の文字を処理  15ミリ秒ごとに次の文字を追加
@@ -280,19 +290,31 @@
                       }
                       // 画像パスが含まれている場合、ファイル名を表示
                       if (data.images && data.images.length > 0) {
-                        data.images.forEach(function(imagePath) {
-                            // ファイル名を取得
+                        data.images.forEach(function(imagePath, index) {
+                            //  画像ファイル名を取得
                             var fileName = imagePath.split('/').pop();
-                            // ファイル名を表示する要素を作成
+                            //  翻訳済みファイル名を
+                            var translatedImagePaths = data.translated_images;
+                            //  言語選択内容を取得  
+                            var currentLanguage = data.current_language;
+                            // 表示するファイル名を決定
+                            var displayFileName;
+                            if (currentLanguage === 'en' &&     // 言語選択が英語の場合
+                                translatedImagePaths &&         // 翻訳済みファイル名が存在する場合
+                                translatedImagePaths[index]) {  // 翻訳済みファイル名がindex番目に存在する場合
+                                  displayFileName = translatedImagePaths[index].split('/').pop();
+                              } else {
+                                  displayFileName = fileName;
+                              }
                             var fileNameElement = $('<a>', {
-                                text: fileName,
+                                text: displayFileName,
                                 href: imagePath,
                                 target: '_blank',                // 新しいタブで開く
                                 css: {
                                     display: 'block',            // ブロック要素として表示
                                     margin: '5px 0',             // 余白を設定
                                     color: 'blue',               // リンクの色
-                                    width: 'fit-content',          // リンクの幅をコンテンツに合わせる
+                                    width: 'fit-content',        // リンクの幅をコンテンツに合わせる
                                     textDecoration: 'underline'  // 下線をつける
                                 }
                               }).hover(
@@ -306,14 +328,17 @@
                             $('#messages').append(fileNameElement);
                         });
                       }
+                      // ボタンのテキストを動的に設定
+                      var currentLanguage = data.current_language;
+                      var buttonText = currentLanguage === 'en' ? 'Check other responses' : '他の回答内容を確認してみる';
                       // 画像URLの処理が完了した後にボタンを表示
                       $('#messages').append(`
-                      <button id="checkOtherResponses" class="btn btn-info mt-3">他の回答内容を確認してみる</button>
-                      `); 
+                      <button id="checkOtherResponses" class="btn btn-info mt-3">${buttonText}</button>
+                      `);
                       $('#checkOtherResponses').click(function() {
                       if (userMessage) {
                         window.location.href = `/chat_app/chat_first/?user_message=${userMessage}`;
-                      } 
+                      }
                       });
                       window.scroll(10000, 10000);                  // 画面最下部に移動
                   }
@@ -327,7 +352,6 @@
               // typeMessage(data.message, 0, textContainer);        // メッセージと開始インデックス（0）を渡して関数を呼び出し
               // setTimeout(toggleScrollButtons, 100);               // ScrollButton表示判断
               typeMessage(data.message, 0, textContainer);
-
           },
           error: function(xhr, status, errorThrown) {
               console.error("AJAX Error:", status, errorThrown);
@@ -471,7 +495,7 @@
         finalTranscript = '';    // 前回の音声認識結果をクリア
       }
     });
-    
+
     $(document).ready(function() {
       $('#startSpeechButton').hover(
         function() {
