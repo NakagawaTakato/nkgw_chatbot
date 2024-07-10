@@ -22,6 +22,7 @@ from common.chatapi_call_first import Chatapi_Call_first
 from common.translator_ja import Translator_ja
 from common.translator_en import Translator_en
 from django.conf import settings
+from django.utils.translation import activate
 
 
 # 初回表示のタイミングと他の質問内容を確認する時の処理
@@ -195,9 +196,10 @@ def chat_first_view(request):
 
     # セッションの言語設定
     user_language = request.session.get('_language', settings.LANGUAGE_CODE)
+    activate(user_language)
     # 画面と連動する言語設定
     request.LANGUAGE_CODE = user_language  
-    print('@@@@@ views.py : def chat_first_view @@@@@ session_language : ', request.session.get('_language', '未設定'))
+    # print('@@@@@ views.py : def chat_first_view @@@@@ session_language : ', request.session.get('_language', '未設定'))
     print('@@@@@ views.py : def chat_first_view @@@@@ html_language    : ', request.LANGUAGE_CODE)
 
     if user_language == 'ja':
