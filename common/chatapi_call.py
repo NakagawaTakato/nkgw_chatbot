@@ -51,9 +51,6 @@ class Chatapi_Call:
 
         # ユーザーとボットの過去の会話履歴を組み合わせる
         conversation_history = ""
-
-        # ユーザーとボットの過去の会話履歴を組み合わせる
-        conversation_history = ""
         user_history = self.request.session.get('past', [])
         bot_history = self.request.session.get('generated', [])
         for i, (user_msg, bot_msg) in enumerate(zip(user_history, bot_history), start=1):
@@ -67,9 +64,28 @@ class Chatapi_Call:
             similar_text_indices = self.get_similar_texts_and_images()
         print("$$$$$$$$ similar_text_indices $$$$$$$$", similar_text_indices)
 
-        # USERMSGと類似性検索でヒットしたデータのindex-noから
-        # 該当のtextデータと画像データ格納場所のPATHを取得する
-        if similar_text_indices:
+        # 類似性検索でヒットするものがなかった場合の処理
+        if not similar_text_indices or similar_text_indices == [None]:
+            if self.request.session.get('_language') == 'en':
+                bot_response = (
+                    'Sorry, but I dont have any information about the subject of your question\n'
+                    'We cant answer your question. If necessary, please contact our support team.\n'
+                    '（電話：03(6914)8524、メール：ifusion_support@imprex.co.jp）'
+                )
+            else:
+                bot_response = (
+                    '申し訳ありませんが、ご質問頂いた内容についての情報を持ち合わせていませんので\n'
+                    'ご回答できません。必要であれば弊社のサポートチームへ連絡をお願い致します。\n'
+                    '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
+                )
+            # 会話履歴にユーザーメッセージを追加  
+            user_history.append(self.user_message)
+            self.request.session['past'] = user_history
+            print("self.user_message", self.user_message)
+            print("conversation_history", conversation_history)
+        else:
+            # USERMSGと類似性検索でヒットしたデータのindex-noから
+            # 該当のtextデータと画像データ格納場所のPATHを取得する
             for index in similar_text_indices:
                 text, image_paths = self.retrieve_text_and_images(index)
                 # 会話履歴格納エリアに該当のtextデータを追加する
@@ -77,29 +93,20 @@ class Chatapi_Call:
                 # 画像格納用エリアに該当の画像データ格納場所のPATHを追加する
                 image_paths_to_display.extend(image_paths)
 
-        # 会話履歴にユーザーメッセージを追加  
-        user_history.append(self.user_message)
-        self.request.session['past'] = user_history
+            # 会話履歴にユーザーメッセージを追加  
+            user_history.append(self.user_message)
+            self.request.session['past'] = user_history
 
-        print("self.user_message", self.user_message)
-        print("conversation_history", conversation_history)
+            print("self.user_message", self.user_message)
+            print("conversation_history", conversation_history)
 
-        # 言語選択に応じて適切なメソッドを呼び出す
-        if self.request.session.get('_language') == 'en':
-            # chatgpt api direct call
-            bot_response = self.load_conversation_en(self.user_message, conversation_history)
-            print("bot_response", bot_response)
-        else:
-            # chatgpt api direct call
-            bot_response = self.load_conversation(self.user_message, conversation_history)
-
-        # APIからの応答をチェック
-        if "回答不能" in bot_response:
-            bot_response = (
-            '申し訳ありませんが、ご質問頂いた内容についての情報を持ち合わせていませんので\n'
-            'ご回答できません。必要であれば弊社のサポートチームへ連絡をお願い致します。\n'
-            '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
-        )
+            # 言語選択に応じて適切なメソッドを呼び出す
+            if self.request.session.get('_language') == 'en':
+                # chatgpt api direct call
+                bot_response = self.load_conversation_en(self.user_message, conversation_history)
+            else:
+                # chatgpt api direct call
+                bot_response = self.load_conversation(self.user_message, conversation_history)
 
         # チャットボット側の履歴に追加する
         bot_history.append({"text": bot_response, "images": image_paths_to_display})
