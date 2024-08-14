@@ -254,9 +254,14 @@
               if (data.show_history_limit_message) {
                 $('#myModal').modal('show');
               }
-              function typeMessage(message, index, messageContainer, callback) { //%%change%%
+              function typeMessage(message, index, messageContainer, callback) {
                   if (index < message.length) {                 // メッセージの終わりまで到達していない場合
-                      if (message[index] === '\n') {            // 改行コードがある場合は、次の行に出力
+                      if (message.substr(index, 2) === '<a') {
+                        // リンクの開始タグを見つけた場合、閉じタグまでスキップ
+                        let endIndex = message.indexOf('</a>', index) + 4;
+                        $(messageContainer).append(message.substring(index, endIndex));
+                        index = endIndex - 1;
+                      } else if (message[index] === '\n') {            // 改行コードがある場合は、次の行に出力
                           $(messageContainer).append('<br>');   // 改行を追加
                           // 改行後の空白を&nbsp;に置換
                           let spaces = "";
@@ -272,7 +277,7 @@
                           $(messageContainer).append(message[index]); // 現在の文字を追加
                       }
 
-                      window.scroll(10000, 10000);                 // 画面最下部に移動
+                      window.scrollTo(0, document.body.scrollHeight);                 // 画面最下部に移動
 
                       // 次の文字を追加するためにタイマーを設定
                       // 再帰的に関数を呼び出し、次の文字を処理  15ミリ秒ごとに次の文字を追加
@@ -283,8 +288,7 @@
                       $('#messages').append('<br><hr>');          // メッセージの終わりに改行と区切り線を追加
                       // メッセージの出力が完了したら、localStorageに保存
                       localStorage.setItem('messages', JSON.stringify($('#messages').html()));
-                      $('#loadingIndicator').hide();              // インジケータを非表示                      
-                      // setTimeout(toggleScrollButtons, 100);       // ScrollButton表示判断
+                      $('#loadingIndicator').hide();              // インジケータを非表示
                       if (typeof callback === 'function') {
                         callback();
                       }
@@ -331,16 +335,22 @@
                       // ボタンのテキストを動的に設定
                       var currentLanguage = data.current_language;
                       var buttonText = currentLanguage === 'en' ? 'Check other responses' : '他の回答内容を確認してみる';
+
+                      // 既存のボタンを削除
+                      $('#checkOtherResponses').remove();
+
                       // 画像URLの処理が完了した後にボタンを表示
                       $('#messages').append(`
                       <button id="checkOtherResponses" class="btn btn-info mt-3">${buttonText}</button>
                       `);
+
                       $('#checkOtherResponses').click(function() {
                       if (userMessage) {
                         window.location.href = `/chat_app/chat_first/?user_message=${userMessage}`;
                       }
                       });
-                      window.scroll(10000, 10000);                  // 画面最下部に移動
+
+                      window.scrollTo(0, document.body.scrollHeight); // 画面最下部に移動
                   }
               }
 
@@ -349,9 +359,9 @@
               $('#messages').append(messageContainer);
               let textContainer = $('<div>');                     // 新しい行にメッセージを追加するためのコンテナ
               $('#messages').append(textContainer);
-              // typeMessage(data.message, 0, textContainer);        // メッセージと開始インデックス（0）を渡して関数を呼び出し
-              // setTimeout(toggleScrollButtons, 100);               // ScrollButton表示判断
-              typeMessage(data.message, 0, textContainer);
+              // メッセージ内のURLをリンクに変換
+              let linkedMessage = linkify(data.message);
+              typeMessage(linkedMessage, 0, textContainer);
           },
           error: function(xhr, status, errorThrown) {
               console.error("AJAX Error:", status, errorThrown);
@@ -508,6 +518,14 @@
         }
       );
     });
+
+    // URLをクリック可能なリンクに変換する関数
+    function linkify(text) {
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      return text.replace(urlRegex, function(url) {
+        return '<a href="' + url + '" target="_blank" style="color: chocolate; text-decoration: underline;">' + url + '</a>';
+      });
+    }
   </script>
 </body>
 </html>

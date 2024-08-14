@@ -31,16 +31,16 @@ class Chatapi_Call_first(Chatapi_Call):
             if text:  # テキストが存在する場合、抽出したテキストとインデックスをリストに追加
                 bot_responses.append({'text': text, 'index_no': index_no}) 
 
-        print('@@@@@ Chatapi_Call_first/bot_responses_before @@@@@', bot_responses)
+        # print('@@@@@ Chatapi_Call_first/bot_responses_before @@@@@', bot_responses)
 
         # 言語選択が英語の場合に英語に翻訳した内容に置き換える
-        print('@@@@@ common/chatapi_call_first.py : def call_openai_chat_completion  @@@@@',self.request.session.get('_language'))
+        # print('@@@@@ common/chatapi_call_first.py : def call_openai_chat_completion  @@@@@',self.request.session.get('_language'))
         if self.request.session.get('_language') == 'en':
             translator = Translator_en(self.api_key)
             for response in bot_responses:
                 response['text'] = translator.translate_to_english(response['text'])
 
-        print('@@@@@ Chatapi_Call_first/bot_responses_after @@@@@', bot_responses)
+        # print('@@@@@ Chatapi_Call_first/bot_responses_after @@@@@', bot_responses)
 
         # ユーザーからのメッセージとボットからのレスポンスをログに記録
         self.log_conversation('aaaaa@bbb.co.jp', 'user', self.user_message)
@@ -54,17 +54,17 @@ class Chatapi_Call_first(Chatapi_Call):
     def get_similar_texts_and_images(self, top_k=5, hit_rate_threshold=0.50):   #調整必要 0.50  
         print('@@@@@ common/chatapi_call_first.py : def get_similar_texts_and_images  @@@@@')
         # ユーザー入力のベクトル化
-        print('@@@@@ self.user_message @@@@@', self.user_message)
+        # print('@@@@@ self.user_message @@@@@', self.user_message)
         user_embedding = self.get_embedding(self.user_message)
         user_embedding_normalized = self.normalize_L2(np.array(user_embedding).reshape(1, -1))
         # 類似性検索を実行
         similarity_scores, similar_indices = self.index.search(user_embedding_normalized, top_k)
-        print('@@@@@ similarity_scores @@@@@', similarity_scores)
-        print('@@@@@ similar_indices @@@@@', similar_indices)
+        print('%%%%%% similarity_scores %%%%%%', similarity_scores)
+        print('%%%%%% similar_indices   %%%%%%', similar_indices)
         # top_k=5 の指定で抽出されたテキストのインデックスをそのまま返す
         # スコアが hit_rate_threshold 以上のもののみをフィルタリング
         filtered_indices = [idx for score, idx in zip(similarity_scores[0], similar_indices[0]) if score >= hit_rate_threshold]
-        print('@@@@@ filtered_indices @@@@@', filtered_indices)
+        # print('@@@@@ filtered_indices @@@@@', filtered_indices)
         # フィルタリングされたインデックスを返す（存在しない場合は空のリスト）
         return filtered_indices
 

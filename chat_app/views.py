@@ -46,7 +46,7 @@ def ask_first(request):
                                             openai.api_key, parquet_path, faiss_path)
     # Chatapi_Call_firstクラスにより、ボットの複数回答を取得する
     bot_responses = chatapi_call_first.call_openai_chat_completion()
-    print('@@@@@ views.py : bot_responses @@@@@', bot_responses)
+    # print('@@@@@ views.py : bot_responses @@@@@', bot_responses)
     # chat_first.htmlにデータを渡してレンダリング
     return JsonResponse({'responses': bot_responses})
 

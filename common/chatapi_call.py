@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import os
 from datetime import datetime
+from common.translator_en import Translator_en
+from django.conf import settings
 
 class Chatapi_Call:
     def __init__(self, request, user_message, application_id, api_key, parquet_path, faiss_path):
@@ -61,11 +63,22 @@ class Chatapi_Call:
         if 'faiss_index_no' in self.request.session:
             similar_text_indices = [self.request.session['faiss_index_no']]
         else:
-            similar_text_indices = self.get_similar_texts_and_images()
+            # まず文章要約で検索
+            summary_faiss_path = self.request.session.get('faiss_path', settings.FAISS_INDEX_SUMMARY_PATH)
+            similar_text_indices = self.get_similar_texts_and_images(faiss_path=summary_faiss_path)
+
+            # 文章要約で見つからなかった場合、文章テキストで検索
+            if not similar_text_indices or similar_text_indices == [None]:
+                similar_text_indices = self.get_similar_texts_and_images()
+
         print("$$$$$$$$ similar_text_indices $$$$$$$$", similar_text_indices)
+
+        # faq_header 変数を初期化
+        faq_header = ""
 
         # 類似性検索でヒットするものがなかった場合の処理
         if not similar_text_indices or similar_text_indices == [None]:
+            print("$$$$$$$$ 回答不能（類似性検索ヒットなし） $$$$$$$$")
             if self.request.session.get('_language') == 'en':
                 bot_response = (
                     'Sorry, but I dont have any information about the subject of your question\n'
@@ -78,16 +91,14 @@ class Chatapi_Call:
                     'ご回答できません。必要であれば弊社のサポートチームへ連絡をお願い致します。\n'
                     '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
                 )
-            # 会話履歴にユーザーメッセージを追加  
+            # 会話履歴にユーザーメッセージを追加 
             user_history.append(self.user_message)
             self.request.session['past'] = user_history
-            print("self.user_message", self.user_message)
-            print("conversation_history", conversation_history)
         else:
             # USERMSGと類似性検索でヒットしたデータのindex-noから
             # 該当のtextデータと画像データ格納場所のPATHを取得する
             for index in similar_text_indices:
-                text, image_paths = self.retrieve_text_and_images(index)
+                text, Location, image_paths = self.retrieve_text_and_images(index)
                 # 会話履歴格納エリアに該当のtextデータを追加する
                 conversation_history += " " + text
                 # 画像格納用エリアに該当の画像データ格納場所のPATHを追加する
@@ -97,19 +108,58 @@ class Chatapi_Call:
             user_history.append(self.user_message)
             self.request.session['past'] = user_history
 
-            print("self.user_message", self.user_message)
-            print("conversation_history", conversation_history)
-
-            # 言語選択に応じて適切なメソッドを呼び出す
+            # chatgptに回答させたくない場合の対応（学習データの内容をそのままbotの回答とする）
             if self.request.session.get('_language') == 'en':
-                # chatgpt api direct call
-                bot_response = self.load_conversation_en(self.user_message, conversation_history)
+                if text.startswith("%%Direct Output%%"):
+                    # "%%Direct Output%%" を除いたテキストを英語に翻訳
+                    text_to_translate = text.replace("%%Direct Output%%", "", 1).strip()
+                    translator = Translator_en(self.api_key)
+                    bot_response = translator.translate_to_english(text_to_translate)
+                else:
+                    # chatgpt api direct call
+                    bot_response = self.load_conversation_en(self.user_message, conversation_history)
             else:
-                # chatgpt api direct call
-                bot_response = self.load_conversation(self.user_message, conversation_history)
+                if text.startswith("%%Direct Output%%"):
+                    # "%%Direct Output%%" を除いたテSストをそのまま使用
+                    bot_response = text.replace("%%Direct Output%%", "", 1).strip()
+                else:
+                    # chatgpt api direct call
+                    bot_response = self.load_conversation(self.user_message, conversation_history)
+
+            # APIからの応答をチェック
+            if "回答不能" in bot_response:
+                print("$$$$$$$$ 回答不能（BOT 回答不能） $$$$$$$$")
+                bot_response = (
+                    '申し訳ありませんが、ご質問頂いた内容についての情報を持ち合わせていませんので\n'
+                    'ご回答できません。必要であれば弊社のサポートチームへ連絡をお願い致します。\n'
+                    '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
+                )
+
+            # APIからの応答をチェック
+            if "Unable to answer" in bot_response:
+                print("$$$$$$$$ 回答不能（BOT Unable to answer） $$$$$$$$")
+                bot_response = (
+                    'Sorry, but I dont have any information about the subject of your question\n'
+                    'We cant answer your question. If necessary, please contact our support team.\n'
+                    '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
+                )
+
+            # index-noがfaqの番号帯の場合、どのマニュアルのFAQであるかを表示する
+            if 60001 <= similar_text_indices[0] <= 69999:
+                faq_header = f"<<{Location} faq>>\n"
+                if not bot_response.startswith(faq_header):
+                    bot_response = faq_header + bot_response
+
+        # チャットボット側の履歴に追加する内容には、<<{Location} faq>>は含めない
+        if faq_header and bot_response.startswith(faq_header):
+            # faq_headerを除いたbot_responseを履歴に保存
+            history_response = bot_response[len(faq_header):]
+        else:
+            # faq_headerがない場合はbot_responseをそのまま使用
+            history_response = bot_response
 
         # チャットボット側の履歴に追加する
-        bot_history.append({"text": bot_response, "images": image_paths_to_display})
+        bot_history.append({"text": history_response, "images": image_paths_to_display})
         self.request.session['generated'] = bot_history
 
         # 履歴が10回を超えた場合、最も古い履歴を削除
@@ -132,8 +182,14 @@ class Chatapi_Call:
         self.request.session['past'] = user_history
         self.request.session['generated'] = bot_history
 
-        print("self.request.session['past']", self.request.session['past'])
-        print("self.request.session['generated']", self.request.session['generated'])
+        # 会話履歴を指定された形式で表示
+        print("<<<<<<<<<会話履歴>>>>>>>>>")
+        for i, (user_msg, bot_msg) in enumerate(zip(self.request.session['past'], self.request.session['generated']), start=1):
+            print(f"{'（１）' if i == 1 else '（２）' if i == 2 else '（３）' if i == 3 else '（４）' if i == 4 else '（５）' if i == 5 else '（６）' if i == 6 else '（７）' if i == 7 else '（８）' if i == 8 else '（９）' if i == 9 else '（１０）'}ユーザー質問{i}回目の内容")
+            print(user_msg)
+            print(f"{'（１）' if i == 1 else '（２）' if i == 2 else '（３）' if i == 3 else '（４）' if i == 4 else '（５）' if i == 5 else '（６）' if i == 6 else '（７）' if i == 7 else '（８）' if i == 8 else '（９）' if i == 9 else '（１０）'}ＢＯＴ回答内容{i}回目の内容")
+            print(bot_msg['text'])
+            print("-" * 150)
 
         # ユーザーからのメッセージをログに記録
         self.log_conversation('aaaaa@bbb.co.jp', 'user', self.user_message)
@@ -142,17 +198,23 @@ class Chatapi_Call:
         self.log_conversation('aaaaa@bbb.co.jp', 'bot', bot_response)
 
         # bot_responseと画像データのpathを返す
-        return bot_response, image_paths_to_display    
+        return bot_response, image_paths_to_display
 
 
     # 類似性検索と画像データの特定を行う
-    def get_similar_texts_and_images(self, top_k=10, hit_rate_threshold=0.50):
+    def get_similar_texts_and_images(self, top_k=10, hit_rate_threshold=0.50, faiss_path=None):
         print('@@@@@ common/chatapi_call.py : def get_similar_texts_and_images  @@@@@')
         # ユーザー入力のベクトル化
         user_embedding = self.get_embedding(self.user_message)
         user_embedding_normalized = self.normalize_L2(np.array(user_embedding).reshape(1, -1))
         # 類似性検索を実行
-        similarity_scores, similar_indices = self.index.search(user_embedding_normalized, top_k)
+        if faiss_path:
+            index = faiss.read_index(faiss_path)
+            print("$$$$$$$$ 文章要約を検索 $$$$$$$$")
+        else:
+            index = self.index
+            print("$$$$$$$$ 文章テキストを検索 $$$$$$$$")
+        similarity_scores, similar_indices = index.search(user_embedding_normalized, top_k)
         # ヒット率の閾値に基づいて最もスコアが高いテキストのインデックスを返す
         max_score_idx = None
         max_score = hit_rate_threshold
@@ -187,8 +249,9 @@ class Chatapi_Call:
         if not filtered_df.empty:
             data = filtered_df.to_dict('records')[0]
             text = data['文章テキスト']
-            image_paths = [os.path.join(data['画像path_bot'], data[f'画像{i}']) for i in range(1, data['参照画像数'] + 1)]
-            return text, image_paths
+            Location = data['掲載箇所（項番）']
+            image_paths = [os.path.join(data['画像path_bot'], data[f'画像{i}']) for i in range(1, int(data['参照画像数']) + 1)]
+            return text, Location, image_paths
         else:
             return "", []
 
@@ -219,7 +282,7 @@ class Chatapi_Call:
         ボットとしてユーザーからの最新質問に回答して下さい。
         ---
         # 制約条件:
-        - ユーザーからの質問に対して、回答時の参考情報を参考にして回答文を生成して下さい。
+        - ユーザーからの質問に対して、回答時の参考情報の最新分の内容を変更せずに、そのまま回答文に転記して下さい。
         - 回答内容は、ユーザーからの最新質問に対してのみ回答して下さい。
         - 回答できないと判断した場合は、回答文に「回答不能」とセットして下さい。
         - 回答内容には、回答時の参考情報の中に含まれているユーザーからの質問には回答しないで下さい。
@@ -240,6 +303,17 @@ class Chatapi_Call:
         completion = self.createCompletion(prompt)
         return completion
 
+        #     # 制約条件:
+        # - ユーザーからの質問に対して、回答時の参考情報の内容を変更せずに、そのまま回答文に転記して下さい。
+        # - 回答内容は、回答時の参考情報の中に含まれている内容からのみ回答文を作成することを絶対条件とする。
+        # - 回答内容は、回答時の参考情報の中に含まれている内容を変更や削除して回答することは絶対禁止とする。
+        # - 回答内容は、回答時の参考情報の中に含まれていない内容を追加することは絶対禁止とする。
+        # - 回答内容は、ユーザーからの最新質問に対してのみ回答して下さい。
+        # - 回答できないと判断した場合は、回答文に「回答不能」とセットして下さい。
+        # - 回答内容には、回答時の参考情報の中に含まれているユーザーからの質問には回答しないで下さい。
+        # - 回答は見出し、箇条書き、表などを使って人間が読みやすく表現してください。
+        # - **ユーザーの質問の言語に関わらず、常に日本語で回答してください。**
+
 
     def load_conversation_en(self, user_message, conversation_history):
         # print('@@@@@ common/chatapi_call.py : def load_conversation_en  @@@@@')
@@ -251,8 +325,8 @@ class Chatapi_Call:
         following the constraints below. Please provide the response in English.
         ---
         # Constraints:
-        - Generate the response text based on the reference information at the time of response to the user's question.
-        - Only respond to the user's latest question.
+        - In response to a user's question, please transcribe the most recent information in the <Reference information at the time of response:> section into your answer without making any changes.
+        - Your answers should only answer the most recent questions from users.
         - If you determine that you cannot answer, set the response text to "Unable to answer".
         - Do not respond to questions from users that are included in the reference information at the time of response.
         - Express the response in a way that is easy for humans to read, using headings, bullet points, tables, etc.
@@ -271,6 +345,17 @@ class Chatapi_Call:
         # Generate the response using the Completion API
         completion = self.createCompletion(prompt)
         return completion
+    
+        #     # Constraints:
+        # - Please generate answers to user questions based on the reference information provided at the time of answering.
+        # - It is an absolute requirement that responses must be created solely from the information contained in the reference information at the time of response.
+        # - It is strictly prohibited to change or delete any information contained in the reference information at the time of replying.
+        # - It is strictly prohibited to add any content to the answer that is not included in the reference information at the time of answering.
+        # - Only respond to the user's latest question.
+        # - If you determine that you cannot answer, set the response text to "Unable to answer".
+        # - Do not respond to questions from users that are included in the reference information at the time of response.
+        # - Express the response in a way that is easy for humans to read, using headings, bullet points, tables, etc.
+        # - **Always respond in English, regardless of the language of the user's question.**
 
 
     def log_conversation(self, user_email, user_or_bot, message):

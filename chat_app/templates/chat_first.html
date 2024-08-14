@@ -292,7 +292,7 @@
 
                       // メッセージの出力が完了したら、localStorageに保存
                       localStorage.setItem('messages', JSON.stringify($('#messages').html()));
-                      window.scroll(10000, 10000);                // 画面最下部に移動
+                      window.scrollTo(0, document.body.scrollHeight);                // 画面最下部に移動
                       $('#loadingIndicator').hide();              // インジケータを非表示
 
                     },
