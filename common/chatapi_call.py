@@ -359,21 +359,27 @@ class Chatapi_Call:
 
 
     def log_conversation(self, user_email, user_or_bot, message):
+        try:
+            # ルートディレクトリ直下の 'conversation_logs.csv' へのパスを指定
+            # csv_file_path = os.path.join('conversation_logs.csv')
+            csv_file_path = '/app/conversation_logs.csv'        # Heroku用の指定
+            conversation_count = self.request.session.get('conversation_count', 0)
+            print(f"CSV file path: {csv_file_path}")            # ログ出力を追加 temp
+            print(f"Conversation count: {conversation_count}")  # ログ出力を追加 temp
+            # データフレームを作成
+            df = pd.DataFrame({
+                '日時': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+                'ユーザーメールアドレス': [user_email],
+                'ユーザーボット識別': [user_or_bot],
+                '会話回数': [conversation_count],
+                'メッセージ内容': [message]
+            })
+            print(f"DataFrame created: {df}")                   # ログ出力を追加 temp
 
-        # ルートディレクトリ直下の 'conversation_logs.csv' へのパスを指定
-        # csv_file_path = os.path.join('conversation_logs.csv')
-        csv_file_path = '/app/conversation_logs.csv'        # Heroku用の指定
-        conversation_count = self.request.session.get('conversation_count', 0)
-        # データフレームを作成
-        df = pd.DataFrame({
-            '日時': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-            'ユーザーメールアドレス': [user_email],
-            'ユーザーボット識別': [user_or_bot],
-            '会話回数': [conversation_count],
-            'メッセージ内容': [message]
-        })
-        # CSVファイルに追記（ファイルが存在しない場合は新規作成）
-        # utf-8-sig エンコーディングを指定
-        df.to_csv(csv_file_path, mode='a', index=False, header=not os.path.exists(csv_file_path), encoding='utf-8-sig')
-
+            # CSVファイルに追記（ファイルが存在しない場合は新規作成）
+            # utf-8-sig エンコーディングを指定
+            df.to_csv(csv_file_path, mode='a', index=False, header=not os.path.exists(csv_file_path), encoding='utf-8-sig')
+            print(f"Logged to {csv_file_path}")  # ログ出力を追加 temp
+        except Exception as e:
+            print(f"Error logging conversation: {e}")  # エラーログを追加
 
