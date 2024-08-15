@@ -361,7 +361,8 @@ class Chatapi_Call:
     def log_conversation(self, user_email, user_or_bot, message):
 
         # ルートディレクトリ直下の 'conversation_logs.csv' へのパスを指定
-        csv_file_path = os.path.join('conversation_logs.csv')
+        # csv_file_path = os.path.join('conversation_logs.csv')
+        csv_file_path = '/app/conversation_logs.csv'        # Heroku用の指定
         conversation_count = self.request.session.get('conversation_count', 0)
         # データフレームを作成
         df = pd.DataFrame({
