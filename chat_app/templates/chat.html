@@ -127,8 +127,8 @@
           {% trans 'チャットボットを終了しますが宜しいですか？' %}
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary" id="confirmEndChatbot">{% trans 'OK' %}</button>
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'キャンセル' %}</button>
+          <button type="button" class="btn btn-primary" id="confirmEndChatbot">OK</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">CANCEL</button>
         </div>
       </div>
     </div>
@@ -186,6 +186,10 @@
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.9.3/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> 
   <script>
+    $('#cancelButton').click(function() {
+      $('#customDialog').modal('hide');
+    });
+
     $(document).ready(function() {
         // chat_first.htmlから連携された聞きたい事を特定した質問文がある場合は、
         // 入力テキストエリアに設定する。    
@@ -271,6 +275,10 @@
               $('#infoModal').modal('show');            // 画面クローズのモーダルを表示
             }
           });
+        });
+
+        $('#cancelButton').click(function() {
+          $('#customDialog').modal('hide');
         });
 
         $('.chatbot-end').click(function() {

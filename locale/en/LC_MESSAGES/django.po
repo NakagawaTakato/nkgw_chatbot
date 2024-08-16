@@ -1251,3 +1251,21 @@ msgstr "Enter your question."
 msgid "選択されたキーワードで検索して回答します。"
 msgstr "Search and answer using selected keywords."
 
+msgid "会話クリア"
+msgstr "Clear conversation"
+
+msgid "チャットボット終了"
+msgstr "Chatbot End"
+
+msgid "チャットボットを終了しますが宜しいですか？"
+msgstr "Are you sure you want to close the chatbot?"
+
+msgid "情報"
+msgstr "information"
+
+msgid "チャットボットを終了しました。"
+msgstr "The chatbot has been terminated."
+
+msgid "Window 画面はブラウザーの✖ボタンで閉じて下さい。"
+msgstr "Please close the window screen by clicking the X button on your browser."
+
