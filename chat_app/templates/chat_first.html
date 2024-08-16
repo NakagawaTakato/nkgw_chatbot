@@ -104,24 +104,49 @@
             {% trans "問題なければ、OKボタンを押して下さい。" %}
           </div>
         <div class="modal-footer">
-          <button id="okButton" class="btn btn-primary">OK</button>
+          <button id="clearButton" class="btn btn-primary">{% trans "会話クリア" %}</button>
           <button id="cancelButton" class="btn btn-secondary">CANCEL</button>
+          <button id="endChatbotButton" class="btn btn-danger">{% trans "チャットボット終了" %}</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal fade" id="endChatbotModal" tabindex="-1" role="dialog" aria-labelledby="endChatbotModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title" id="myModalLabel">{% trans 'ご連絡' %}</h4>
+          <h5 class="modal-title" id="endChatbotModalLabel">{% trans '確認' %}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
         <div class="modal-body">
-          {% trans '会話履歴が10件を超えました。以後、最新10件の会話履歴までを考慮して回答させて頂きます。' %}
+          {% trans 'チャットボットを終了しますが宜しいですか？' %}
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">{% trans '閉じる' %}</button>
+          <button type="button" class="btn btn-primary" id="confirmEndChatbot">{% trans 'OK' %}</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'キャンセル' %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="infoModalLabel">{% trans '情報' %}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          {% trans 'チャットボットを終了しました。' %}<br>
+          {% trans 'Window 画面はブラウザーの✖ボタンで閉じて下さい。' %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans '閉じる' %}</button>
         </div>
       </div>
     </div>
@@ -207,6 +232,8 @@
     });
 
     var currentLanguage = "{{ current_language }}";  // 現在の言語
+    // セッションのチャットボットステータスを取得
+    // let chatbotStatus = "{{ request.session.chatbot_status }}"; 
 
     $(document).ready(function() {
 
@@ -462,7 +489,7 @@
         $('#customDialog').modal('show');             // カスタムダイアログを表示
       });
 
-      $('#okButton').off('click').click(function() {
+      $('#clearButton').off('click').click(function() {
         $('#customDialog').modal('hide');
         // OKボタンがクリックされたときに会話履歴をクリア
         localStorage.removeItem('messages');
@@ -475,6 +502,27 @@
           headers: { "X-CSRFToken": csrfToken },
           success: function() {
             window.location.reload();                 // ページをリロード
+          }
+        });
+      });
+
+      $('#endChatbotButton').off('click').click(function() { // チャットボット終了ボタンの処理
+        $('#customDialog').modal('hide');
+        $('#endChatbotModal').modal('show');  // モーダルを表示
+      });
+
+      $('#confirmEndChatbot').off('click').click(function() {
+        $('#endChatbotModal').modal('hide');
+        // ローカルストレージのクリア処理を追加
+        localStorage.removeItem('messages');
+        localStorage.removeItem('chatCount'); 
+        localStorage.removeItem('userMessage');
+        $.ajax({
+          type: "POST",
+          url: '/chat_app/end_chatbot/',
+          headers: { "X-CSRFToken": document.getElementById('csrfToken').value },
+          success: function(response) {
+            $('#infoModal').modal('show');            // 画面クローズのモーダルを表示
           }
         });
       });

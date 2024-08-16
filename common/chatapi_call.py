@@ -6,6 +6,11 @@ import os
 from datetime import datetime
 from common.translator_en import Translator_en
 from django.conf import settings
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText 
+from email import encoders
 
 class Chatapi_Call:
     def __init__(self, request, user_message, application_id, api_key, parquet_path, faiss_path):
@@ -345,41 +350,54 @@ class Chatapi_Call:
         # Generate the response using the Completion API
         completion = self.createCompletion(prompt)
         return completion
-    
-        #     # Constraints:
-        # - Please generate answers to user questions based on the reference information provided at the time of answering.
-        # - It is an absolute requirement that responses must be created solely from the information contained in the reference information at the time of response.
-        # - It is strictly prohibited to change or delete any information contained in the reference information at the time of replying.
-        # - It is strictly prohibited to add any content to the answer that is not included in the reference information at the time of answering.
-        # - Only respond to the user's latest question.
-        # - If you determine that you cannot answer, set the response text to "Unable to answer".
-        # - Do not respond to questions from users that are included in the reference information at the time of response.
-        # - Express the response in a way that is easy for humans to read, using headings, bullet points, tables, etc.
-        # - **Always respond in English, regardless of the language of the user's question.**
-
 
     def log_conversation(self, user_email, user_or_bot, message):
+        # MEDIA_ROOTディレクトリに 'conversation_logs.csv' へのパスを指定
+        csv_file_path = os.path.join(settings.MEDIA_ROOT, 'conversation_logs.csv')
+        conversation_count = self.request.session.get('conversation_count', 0)
+        # データフレームを作成
+        df = pd.DataFrame({
+            '日時': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+            'ユーザーメールアドレス': [user_email],
+            'ユーザーボット識別': [user_or_bot],
+            '会話回数': [conversation_count],
+            'メッセージ内容': [message]
+        })
+        # CSVファイルに追記（ファイルが存在しない場合は新規作成）
+        # utf-8-sig エンコーディングを指定
+        df.to_csv(csv_file_path, mode='a', index=False, header=not os.path.exists(csv_file_path), encoding='utf-8-sig')
+
+
+    @classmethod
+    def send_email_with_attachment(cls):
+        file_path = os.path.join(settings.MEDIA_ROOT, 'conversation_logs.csv')
+        from_email = "mamoru.nakagawa@imprex.co.jp"
+        # to_emails = ["mamoru.nakagawa@imprex.co.jp", "kazuma.harimoto@imprex.co.jp"]
+        to_emails = ["mamoru.nakagawa@imprex.co.jp"]
+        subject = "iFUSION AI Chatbot Conversation Logs"
+        body = "Please find the attached conversation logs."
+
+        msg = MIMEMultipart()
+        msg['From'] = from_email
+        msg['To'] = ", ".join(to_emails)
+        msg['Subject'] = subject
+
+        msg.attach(MIMEText(body, 'plain'))
+
+        attachment = open(file_path, "rb")
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(file_path)}")
+        msg.attach(part)
+
         try:
-            # ルートディレクトリ直下の 'conversation_logs.csv' へのパスを指定
-            # csv_file_path = os.path.join('conversation_logs.csv')
-            csv_file_path = '/app/conversation_logs.csv'        # Heroku用の指定
-            conversation_count = self.request.session.get('conversation_count', 0)
-            print(f"CSV file path: {csv_file_path}")            # ログ出力を追加 temp
-            print(f"Conversation count: {conversation_count}")  # ログ出力を追加 temp
-            # データフレームを作成
-            df = pd.DataFrame({
-                '日時': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-                'ユーザーメールアドレス': [user_email],
-                'ユーザーボット識別': [user_or_bot],
-                '会話回数': [conversation_count],
-                'メッセージ内容': [message]
-            })
-            print(f"DataFrame created: {df}")                   # ログ出力を追加 temp
-
-            # CSVファイルに追記（ファイルが存在しない場合は新規作成）
-            # utf-8-sig エンコーディングを指定
-            df.to_csv(csv_file_path, mode='a', index=False, header=not os.path.exists(csv_file_path), encoding='utf-8-sig')
-            print(f"Logged to {csv_file_path}")  # ログ出力を追加 temp
+            server = smtplib.SMTP('smtp.office365.com', 587)  # Outlook.com/Office 365のSMTPサーバー
+            server.starttls()
+            server.login(from_email, "Mamofumi2211")
+            text = msg.as_string()
+            server.sendmail(from_email, to_emails, text)
+            server.quit()
+            print("Email send successfully")
         except Exception as e:
-            print(f"Error logging conversation: {e}")  # エラーログを追加
-
+            print(f"Failed to send email: {e}")

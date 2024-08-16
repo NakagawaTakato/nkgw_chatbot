@@ -95,7 +95,6 @@
     </div>
   </div>
 
-
   <div id="customDialog" class="modal fade" data-backdrop="static" data-keyboard="false" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -107,8 +106,49 @@
             {% trans "問題なければ、OKボタンを押して下さい。" %}
           </div>
         <div class="modal-footer">
-          <button id="okButton" class="btn btn-primary">OK</button>
+          <button id="clearButton" class="btn btn-primary">{% trans "会話クリア" %}</button>
           <button id="cancelButton" class="btn btn-secondary">CANCEL</button>
+          <button id="endChatbotButton" class="btn btn-danger">{% trans "チャットボット終了" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="endChatbotModal" tabindex="-1" role="dialog" aria-labelledby="endChatbotModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="endChatbotModalLabel">{% trans '確認' %}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          {% trans 'チャットボットを終了しますが宜しいですか？' %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="confirmEndChatbot">{% trans 'OK' %}</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'キャンセル' %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="infoModalLabel">{% trans '情報' %}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          {% trans 'チャットボットを終了しました。' %}<br>
+          {% trans 'Window 画面はブラウザーの✖ボタンで閉じて下さい。' %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans '閉じる' %}</button>
         </div>
       </div>
     </div>
@@ -144,13 +184,9 @@
   <!-- jQuery Slimをフルバージョンに変更 -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.9.3/dist/umd/popper.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>  
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> 
   <script>
-    $('#cancelButton').click(function() {
-      $('#customDialog').modal('hide');
-    });
-
-    $(document).ready(function() { 
+    $(document).ready(function() {
         // chat_first.htmlから連携された聞きたい事を特定した質問文がある場合は、
         // 入力テキストエリアに設定する。    
         const text = "{{ request.session.selectedText|default:'' }}";
@@ -199,23 +235,12 @@
             }
         });
 
-        $('#okButton').click(function() {
+        $('#clearButton').off('click').click(function() {
           $('#customDialog').modal('hide');
-        });
-
-        $('#cancelButton').click(function() {
-          $('#customDialog').modal('hide');
-        });
-
-        $('.chatbot-end').click(function() {
-          $('#customDialog').modal('show');             // カスタムダイアログを表示
-        });
-
-        $('#okButton').click(function() {
-          $('#customDialog').modal('hide');
-          // OKボタンがクリックされたときに会話履歴をクリア
+          // 会話履歴をクリアする処理
           localStorage.removeItem('messages');
-          console.log("通過 localStorage.remove");
+          localStorage.removeItem('chatCount'); 
+          localStorage.removeItem('userMessage');
           $.ajax({
             type: "POST",
             url: '/chat_app/clear_history/',            // clear_history関数に対応するURL
@@ -225,6 +250,31 @@
               window.location.href = '/chat_app/chat_first/'; 
             }
           });
+        });
+
+        $('#endChatbotButton').off('click').click(function() { // チャットボット終了ボタンの処理
+          $('#customDialog').modal('hide');
+          $('#endChatbotModal').modal('show');  // モーダルを表示
+        });
+
+        $('#confirmEndChatbot').off('click').click(function() {
+          $('#endChatbotModal').modal('hide');
+          // ローカルストレージのクリア処理を追加
+          localStorage.removeItem('messages');
+          localStorage.removeItem('chatCount'); 
+          localStorage.removeItem('userMessage');
+          $.ajax({
+            type: "POST",
+            url: '/chat_app/end_chatbot/',
+            headers: { "X-CSRFToken": document.getElementById('csrfToken').value },
+            success: function(response) {
+              $('#infoModal').modal('show');            // 画面クローズのモーダルを表示
+            }
+          });
+        });
+
+        $('.chatbot-end').click(function() {
+          $('#customDialog').modal('show');             // カスタムダイアログを表示
         });
     });
 

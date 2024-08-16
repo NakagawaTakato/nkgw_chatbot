@@ -23,6 +23,7 @@ from common.translator_ja import Translator_ja
 from common.translator_en import Translator_en
 from django.conf import settings
 from django.utils.translation import activate
+from django.utils.translation import gettext as _
 
 
 # 初回表示のタイミングと他の質問内容を確認する時の処理
@@ -227,6 +228,7 @@ def chat_first_view(request):
     user_message = request.GET.get('user_message')
     if user_message:
         context['user_message'] = user_message
+
     return render(request, 'chat_first.html', context)
 
 
@@ -275,7 +277,6 @@ def clear_history(request):
         del request.session['faiss_index_no']
     if 'faiss_selectedText' in request.session:
         del request.session['faiss_selectedText']
-    # テキストをセッションに保存
     request.session['clear_process'] =  'clear_process'
     return JsonResponse({'status': 'success'})
 
@@ -316,3 +317,25 @@ def authenticate_and_get_openai_key(request):
             print("認証に失敗しました。")  # 仮のエラーハンドリング
             print("response.status_code: ", response.status_code)  # 仮のエラーハンドリング
         return HttpResponse("OpenAI key is: " + request.session['openai_api_key'])
+
+
+@require_http_methods(["POST"])
+def end_chatbot(request):
+    print('@@@@@ views.py : def end_chatbot @@@@@')
+
+    # セッションをクリアする
+    clear_history(request)
+    request.session.flush()
+
+    # メール送信処理を呼び出す
+    Chatapi_Call.send_email_with_attachment()
+
+    # chatbot終了後にリロードした時に前の画面を表示させないための対応
+    request.session['clear_process'] =  'clear_process'
+
+    # CSVファイルの内容をクリアする
+    csv_file_path = os.path.join(settings.BASE_DIR, 'media', 'conversation_logs.csv')
+    with open(csv_file_path, 'w') as csv_file:
+        csv_file.truncate()
+
+    return JsonResponse({'status': 'success'})

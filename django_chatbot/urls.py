@@ -36,3 +36,7 @@ urlpatterns = [
 
 # 画像ファイルへのアクセスを設定
 urlpatterns += static('/chat_app/chat/common/imagefile/', document_root=settings.IMAGE_FILE_PATH)
+
+# メディアファイルへのアクセスを設定
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
