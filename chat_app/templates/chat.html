@@ -206,13 +206,14 @@
         if (storedMessages) {
             $('#messages').html(storedMessages);
 
-            // ローカルストレージから読み込んだ要素のスタイルを変更（過去履歴はクリック不可にする）
-              $('#messages .clickable-response').css({
-                'text-decoration': 'none',
-                'font-weight': 'normal',
-                'color': 'inherit',
-                'cursor': 'default'
-            }).removeClass('clickable-response');
+          // ローカルストレージから読み込んだ要素のスタイルを変更
+          // クリックイベントは保持したまま、見た目だけ変更
+          $('#messages .clickable-response').css({
+            'text-decoration': 'none',
+            'font-weight': 'normal',
+            'color': 'inherit',
+            'cursor': 'default'
+          });  
         }
 
         // chat_first.htmlから連携されたfaiss特定済みの質問文がある場合は、
