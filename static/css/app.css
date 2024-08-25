@@ -91,7 +91,6 @@ body {
 .input-group {
   display: flex;
   align-items: center;
-  width:  85%;
   padding: 5px 0px;
   background-color: #00A2E8;
   position: fixed;
@@ -100,14 +99,14 @@ body {
 }
 .input-group textarea {
   box-sizing: border-box;
-  width: calc(100% - 100px - 20px); /* ボタンの幅、ボタンの左右のパディング、.input-groupの左右のパディングを考慮 */
-  min-height: 20px; /* 2行のテキストの高さを適切に設定 */
-  padding: 10px;
+  width: 840px; /* 固定幅を指定 */
+  min-height: 20px;
+  padding: 8px;
   margin-right: 10px;
-  font-size: 16px;
+  font-size: 14px;
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  resize: vertical; /* ユーザーがテキストエリアの高さを変更できるようにする */
+  resize: vertical;
   background-color: #f4f4f4;
 }
 .input-group button {
@@ -297,4 +296,16 @@ body {
 #startSpeechButton.active {
   background-color: #dc3545;   /* 赤色 */
   color: white;                /* アイコンの色を白に */
+}
+
+.dynamic-width {
+  width: 68%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .dynamic-width {
+    width: 95%;
+  }
 }
