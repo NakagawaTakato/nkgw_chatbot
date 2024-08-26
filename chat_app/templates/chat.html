@@ -56,7 +56,6 @@
       <!--<span class="mode-label">{% trans '　会話モード選択　' %}</span>
       <select id="modeSelect">
         <option value="free" selected>フリー会話モード</option>
-
         <option value="precheck">事前確認モード</option>
       </select> -->
       <button class="chatbot-end">Chatbot ends</button>
@@ -83,7 +82,7 @@
     <div class="chat-window" id="messages">
       <!-- Chat messages will be dynamically loaded here -->
     </div>
-    <div class="input-group">
+    <div class="input-group dynamic-width">
       <textarea id="messageInput" class="form-control" placeholder="{% trans '質問を入力して下さい' %}"></textarea>
       <div class="input-group-append">
         <button id="sendButton" class="btn btn-primary rounded-pill btn-narrow">{% trans '送信' %}</button>
@@ -208,13 +207,14 @@
         if (storedMessages) {
             $('#messages').html(storedMessages);
 
-            // ローカルストレージから読み込んだ要素のスタイルを変更（過去履歴はクリック不可にする）
-              $('#messages .clickable-response').css({
-                'text-decoration': 'none',
-                'font-weight': 'normal',
-                'color': 'inherit',
-                'cursor': 'default'
-            }).removeClass('clickable-response');
+          // ローカルストレージから読み込んだ要素のスタイルを変更
+          // クリックイベントは保持したまま、見た目だけ変更
+          $('#messages .clickable-response').css({
+            'text-decoration': 'none',
+            'font-weight': 'normal',
+            'color': 'inherit',
+            'cursor': 'default'
+          });  
         }
 
         // chat_first.htmlから連携されたfaiss特定済みの質問文がある場合は、

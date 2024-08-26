@@ -13,6 +13,8 @@
 <link rel="stylesheet" href="{% static 'css/app.css' %}">
 <!-- APL tab icon -->
 <link rel="icon" href="{% static 'icon/favicon.ico' %}">
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 <!-- 画面サイズを表示する場合に下記の指定をする -->
 <!-- <style>
   #windowSize {
@@ -78,7 +80,7 @@
       iFUSION-AI Chatbot
     </div>
     <!-- chat_first.html 固有定義 START -->
-    <div class="special-content">
+    <div class="special-content dynamic-width">
       <ul id="response-list" class="clickable-list">
         <!-- リストアイテムはJavaScriptで動的に追加 -->
       </ul>
@@ -87,9 +89,16 @@
     <div class="chat-window" id="messages">
       <!-- Chat messages will be dynamically loaded here -->
     </div>
-    <div class="input-group">
-      <textarea id="messageInput" placeholder="{% trans '質問を入力して下さい' %}"></textarea>
-      <button id="sendButton">{% trans '送信' %}</button>
+    <div class="input-group dynamic-width">
+      <textarea id="messageInput" class="form-control" placeholder="{% trans '質問を入力して下さい' %}"></textarea>
+      <div class="input-group-append">
+        <button id="sendButton" class="btn btn-primary rounded-pill btn-narrow">{% trans '送信' %}</button>
+        <!-- 音声入力ボタンのスタイルをBootstrapで適用し、さらにrounded-pillクラスを追加 -->
+        <button id="startSpeechButton" class="btn btn-success rounded-pill btn-narrow">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <div class="tooltip" style="display: none;">{% trans 'このマイクボタンのＯＮ／ＯＦＦで音声入力の開始と停止を行います。' %}</div>
+      </div>
     </div>
   </div>
 
@@ -100,12 +109,9 @@
           <h5 class="modal-title">{% trans "チャットボット終了の確認" %}</h5>
         </div>
           <div class="modal-body">
-            <div class="modal-body">
-              {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
-              {% trans "問題なければ、チャットボット終了ボタンを押して下さい。" %}<br>
-              {% trans "会話履歴のクリアのみを行う場合は、会話クリアボタンを押して下さい。" %}
-          </div>
-          
+            {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
+            {% trans "問題なければ、チャットボット終了ボタンを押して下さい。" %}<br>
+            {% trans "会話履歴のクリアのみを行う場合は、会話クリアボタンを押して下さい。" %}
           </div>
         <div class="modal-footer">
           <button id="clearButton" class="btn btn-primary">{% trans "会話クリア" %}</button>
@@ -248,7 +254,31 @@
       let storedMessages = JSON.parse(localStorage.getItem('messages'));
       if (storedMessages) {
           $('#messages').html(storedMessages);
+
+          // chat.htmlで変更したスタイルをchat_first.html では元のスタイルに戻す
+          $('#messages .clickable-response').addClass('clickable-response').css({
+              'text-decoration': 'underline',
+              'cursor': 'pointer',
+              'padding': '5px',
+              'margin-bottom': '5px',
+              'width': 'fit-content'
+          });
+
+          // ホバーとアクティブ状態のイベントを再設定
+          $('#messages .clickable-response').hover(
+              function() {
+                  $(this).css('font-weight', 'bold');
+              },
+              function() {
+                  $(this).css('font-weight', 'normal');
+              }
+          ).on('mousedown', function() {
+              $(this).css('background-color', 'rgba(255, 255, 255, 0.2)');
+          }).on('mouseup mouseleave', function() {
+              $(this).css('background-color', '');
+          });
       }
+
       // 画像データのリンクをクリック不可能にする
       $('#messages a').on('click', function(e) {
         e.preventDefault();
@@ -710,6 +740,93 @@
     //    // 処理なし
     //  }
     // });
+
+        // 音声入力ボタンのクリックイベント -- START -----------------------------------------------
+    // Web Speech APIのSpeechRecognitionオブジェクトを初期化
+    const speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new speechRecognition();
+    recognition.lang = 'ja-JP';
+    // recognition.lang = 'xx-x';     // エラー発生用に無効な言語設定を指定
+    recognition.interimResults = true;
+    recognition.continuous = true; // continuousをtrueに設定
+
+    let isListening = false;
+    let finalTranscript = '';
+
+    document.getElementById('startSpeechButton').addEventListener('click', function() {
+      if (!isListening) {
+        recognition.start();
+        // 一時的にエラーを発生させる 　TEST用コード
+        //recognition.onerror({ error: 'test error' });
+        isListening = true;
+        this.classList.add('active');
+        // console.log("音声認識を開始しました。");
+      } else {
+        recognition.stop();
+        isListening = false;
+        this.classList.remove('active');
+        // console.log("音声認識を停止しました。");
+      }
+    });
+
+    recognition.onresult = function(event) {
+      // console.log("onresult イベントが発火しました。");
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      document.getElementById('messageInput').value = finalTranscript;
+    };
+
+    recognition.onspeechend = function() {
+      // console.log("音声が自然に途切れました。onspeechend イベントが発火しました。");
+      finalTranscript += " / ";   // 音声が自然に途切れたときに / を追加
+      document.getElementById('messageInput').value = finalTranscript; // テキストエリアの値を更新
+      recognition.stop();
+      isListening = false;
+      document.getElementById('startSpeechButton').classList.remove('active'); // ボタンを無色にする
+    };
+
+    recognition.onend = function() {
+      // console.log("onend イベントが発火しました。");
+      isListening = false;
+      document.getElementById('startSpeechButton').classList.remove('active');
+    };
+
+    recognition.onerror = function(event) {
+      console.error('音声認識エラー:', event.error);
+      isListening = false;
+      document.getElementById('startSpeechButton').classList.remove('active');
+
+      // エラーメッセージを表示
+      alert('音声認識でエラーになりました。音声入力装置の接続を確認して下さい。エラーが続くようであれば手入力でお願いいたします。');
+    };
+    // 音声入力ボタンのクリックイベント -- END -----------------------------------------------
+
+    // 音声入力したあとの送信ボタンのクリックイベントで入力されたテキストをクリアする
+    document.getElementById('sendButton').addEventListener('click', function() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      if (message) {
+        sendMessage(message);
+        messageInput.value = ''; // 質問入力エリアをクリア
+        finalTranscript = '';    // 前回の音声認識結果をクリア
+      }
+    });
+
+    $(document).ready(function() {
+      $('#startSpeechButton').hover(
+        function() {
+          console.log("Hover in");
+          $(this).next('.tooltip').css('display', 'block');  // 明示的にdisplayをblockに設定
+        }, 
+        function() {
+          console.log("Hover out");
+          $(this).next('.tooltip').css('display', 'none');  // 明示的にdisplayをnoneに設定
+        }
+      );
+    });
   </script>
 </body>
 </html>
