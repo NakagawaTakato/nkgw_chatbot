@@ -304,7 +304,13 @@ body {
   margin: 0 auto;
 }
 
-@media (max-width: 768px) {
+/* モバイル端末の時、言語選択を隠す */
+@media (min-width: 724px) and (max-width: 789px) {
+  .dynamic-width {
+    width: 75%;
+  }
+}
+@media (min-width: 882px) and (max-width: 932px) {
   .dynamic-width {
     width: 95%;
   }
