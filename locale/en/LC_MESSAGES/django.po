@@ -1227,6 +1227,12 @@ msgstr "Confirmation of chatbot termination"
 msgid "チャットボットを終了すると会話履歴はクリアされます。"
 msgstr "The conversation history will be cleared when you exit the chatbot."
 
+msgid "問題なければ、チャットボット終了ボタンを押して下さい。" 
+msgstr "If there are no issues, please press the exit button of the chatbot."
+
+msgid "会話履歴のクリアのみを行う場合は、会話クリアボタンを押して下さい。" 
+msgstr "If you only wish to clear the conversation history, please press the Clear Conversation button."
+
 msgid "問題なければ、OKボタンを押して下さい。"
 msgstr "If there is no problem, press the OK button."
 
