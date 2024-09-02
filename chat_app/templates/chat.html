@@ -84,6 +84,7 @@
     </div>
     <div class="input-group dynamic-width">
       <textarea id="messageInput" class="form-control" placeholder="{% trans '質問を入力して下さい' %}"></textarea>
+      <button id="inputclear" type="button" class="container-box-delete">Clear</button>  
       <div class="input-group-append">
         <button id="sendButton" class="btn btn-primary rounded-pill btn-narrow">{% trans '送信' %}</button>
         <!-- 音声入力ボタンのスタイルをBootstrapで適用し、さらにrounded-pillクラスを追加 -->
@@ -102,8 +103,7 @@
           <h5 class="modal-title">{% trans "チャットボット終了の確認" %}</h5>
         </div>
           <div class="modal-body">
-            {% trans "チャットボットを終了すると会話履歴はクリアされます。" %}<br>
-            {% trans "問題なければ、チャットボット終了ボタンを押して下さい。" %}<br>
+            {% trans "チャットボット終了ボタンでチャットボットが終了します。" %}<br>
             {% trans "会話履歴のクリアのみを行う場合は、会話クリアボタンを押して下さい。" %}
           </div>
         <div class="modal-footer">
@@ -190,6 +190,8 @@
     $('#cancelButton').click(function() {
       $('#customDialog').modal('hide');
     });
+
+    var currentLanguage = "{{ current_language }}";  // 現在の言語
 
     $(document).ready(function() {
         // chat_first.htmlから連携された聞きたい事を特定した質問文がある場合は、
@@ -496,13 +498,17 @@
     // Web Speech APIのSpeechRecognitionオブジェクトを初期化
     const speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new speechRecognition();
-    recognition.lang = 'ja-JP';
+    recognition.lang = currentLanguage === 'en' ? 'en-US' : 'ja-JP';
+    // recognition.lang = 'ja-JP';
     // recognition.lang = 'xx-x';     // エラー発生用に無効な言語設定を指定
     recognition.interimResults = true;
     recognition.continuous = true; // continuousをtrueに設定
 
     let isListening = false;
     let finalTranscript = '';
+    let ele_dual = document.getElementById('inputclear');
+    // 現在の display プロパティの値を保持
+    const displayOriginal_dual = ele_dual.style.display;
 
     document.getElementById('startSpeechButton').addEventListener('click', function() {
       if (!isListening) {
@@ -511,6 +517,8 @@
         //recognition.onerror({ error: 'test error' });
         isListening = true;
         this.classList.add('active');
+        // 元に戻して表示
+        ele_dual.style.display = displayOriginal_dual;
         // console.log("音声認識を開始しました。");
       } else {
         recognition.stop();
@@ -531,10 +539,15 @@
     };
 
     recognition.onspeechend = function() {
-      // console.log("音声が自然に途切れました。onspeechend イベントが発火しました。");
-      finalTranscript += " / ";   // 音声が自然に途切れたときに / を追加
+    if (finalTranscript.trim() === '') {
+      // 空白の場合の処理
+      console.log('音声入力が空白でした');
+      // ここに空白の場合の追加の処理を記述
+    } else {
+      finalTranscript += " ";   // 音声が途切れたときに / を追加
       document.getElementById('messageInput').value = finalTranscript; // テキストエリアの値を更新
-      recognition.stop();
+    }
+    recognition.stop();
       isListening = false;
       document.getElementById('startSpeechButton').classList.remove('active'); // ボタンを無色にする
     };
@@ -586,6 +599,35 @@
         return '<a href="' + url + '" target="_blank" style="color: chocolate; text-decoration: underline;">' + url + '</a>';
       });
     }
+
+    // 質問入力エリアに入力された値が空ではないかチェック
+    document.addEventListener('DOMContentLoaded', function() {
+      const messageInput = document.getElementById('messageInput');
+      let ele = document.getElementById('inputclear');
+      // 現在の display プロパティの値を保持
+      const displayOriginal = ele.style.display;
+      // 元に戻して表示
+      ele.style.display = displayOriginal;
+
+      // 初期状態で削除ボタンを非表示にする
+      ele.style.display = 'none';
+
+      messageInput.addEventListener('input', function(event) {
+        if (event.target.value.trim()) {
+          // 元に戻して表示
+          ele.style.display = displayOriginal;
+        } else {
+          ele.style.display = 'none';
+        }
+      });
+
+      // クリアボタンのクリックイベント
+      ele.addEventListener('click', function() {
+        messageInput.value = '';
+        this.style.display = 'none';
+        finalTranscript = '';    // 前回の音声認識結果をクリア
+      });
+    });
   </script>
 </body>
 </html>

@@ -219,10 +219,13 @@ def chat_first_view(request):
     }
 
     # clear_process（会話履歴クリア処理）の場合
+    print('@@@@@ request.session clear_process @@@@@',request.session.get('clear_process'))
     if request.session.get('clear_process') == 'clear_process':
+        print('@@@@@ point001 @@@@@')
         del request.session['clear_process']
         # chat.htmlから連携されるuser_messageを渡さずにレンダリング
         return render(request, 'chat_first.html', context)
+    print('@@@@@ point002 @@@@@')
 
     # chat.htmlから連携される場合は、user_messageを含めてレンダリング
     user_message = request.GET.get('user_message')
@@ -232,10 +235,24 @@ def chat_first_view(request):
     return render(request, 'chat_first.html', context)
 
 
-def chat_view(request):
-    print('@@@@@ views.py : def chat_view @@@@@')
-    return render(request, 'chat.html')
+# def chat_view(request):
+#     print('@@@@@ views.py : def chat_view @@@@@')
+#     return render(request, 'chat.html')
 
+def chat_view(request):
+    print('@@@@@ views.py : def def chat_view @@@@@')
+
+    # セッションの言語設定
+    user_language = request.session.get('_language', settings.LANGUAGE_CODE)
+    activate(user_language)
+    # 画面と連動する言語設定
+    request.LANGUAGE_CODE = user_language  
+
+    context = {
+        'current_language': user_language
+    }
+
+    return render(request, 'chat.html', context)
 
 def set_language(request):
     print('@@@@@ views.py : def set_language @@@@@')

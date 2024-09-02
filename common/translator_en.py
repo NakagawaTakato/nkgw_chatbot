@@ -15,7 +15,7 @@ class Translator_en:
             {"role": "user", "content": f"Translate the following text to English:\n\n{text}"}
         ]
         response = openai.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=translate_prompt,
             temperature = 0.0
         )

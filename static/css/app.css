@@ -97,6 +97,7 @@ body {
   bottom: 0;
   box-sizing: border-box;
 }
+
 .input-group textarea {
   box-sizing: border-box;
   width: 840px; /* 固定幅を指定 */
@@ -119,9 +120,24 @@ body {
   cursor: pointer;
   padding: 0 20px;  /* ボタン内の左右のパディングを追加してテキストが見やすく */
 }
+
+.container-box-delete {
+  width: auto; /* ボタンの幅を内容に合わせて自動調整 */
+  min-width: 100px; /* 最小横幅を100pxに設定 */
+  height: 50px;
+  background-color: #17A2B8 !important;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0 20px;  /* ボタン内の左右のパディングを追加してテキストが見やすく */
+  border-radius: 50rem; /* これは Bootstrap の rounded-pill クラスと同等です */
+  overflow: hidden; /* 子要素が角丸からはみ出さないようにします */
+}
+
+
 .language-label {
   color: white; 
-  margin-right: 10px; 
+  margin-right: 10px;
   font-size: 16px; 
 }
 /* モバイル端末の時、言語選択を隠す */
@@ -299,7 +315,7 @@ body {
 }
 
 .dynamic-width {
-  width: 68%;
+  width: 70%;
   max-width: 1200px;
   margin: 0 auto;
 }
