@@ -24,12 +24,3 @@ class Translator_en:
 
         translated_text = response.choices[0].message.content.strip()
         return translated_text
-
-
-
-
-
-
-
-
-
