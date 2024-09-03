@@ -1,3 +1,4 @@
+
 import openai
 
 class Translator_en:
@@ -9,15 +10,26 @@ class Translator_en:
 
         openai.api_key = self.api_key
 
+
         # 英語に翻訳するプロンプト
         translate_prompt = [
             {"role": "system", "content": "You are a translation assistant."},
             {"role": "user", "content": f"Translate the following text to English:\n\n{text}"}
-        ]
+]
         response = openai.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4-turbo",
             messages=translate_prompt,
             temperature = 0.0
         )
+
         translated_text = response.choices[0].message.content.strip()
         return translated_text
+
+
+
+
+
+
+
+
+

@@ -15,7 +15,7 @@ class Translator_ja:
             {"role": "user", "content": f"Detect the language of the following text and respond with the language code (e.g., 'en' for English, 'ja' for Japanese):\n\n{text}"}
         ]
         response = openai.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4-turbo",
             messages=detect_prompt,
             temperature = 0.0
         )
@@ -30,7 +30,7 @@ class Translator_ja:
                 {"role": "user", "content": f"Translate the following text to Japanese:\n\n{text}"}
             ]
             response = openai.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4-turbo",
                 messages=translate_prompt,
                 temperature = 0.0
             )

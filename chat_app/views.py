@@ -24,6 +24,8 @@ from common.translator_en import Translator_en
 from django.conf import settings
 from django.utils.translation import activate
 from django.utils.translation import gettext as _
+# 正規表現ライブラリ
+import re
 
 
 # 初回表示のタイミングと他の質問内容を確認する時の処理
@@ -102,7 +104,21 @@ def ask(request):
     translated_image_paths = image_paths_to_display
     if current_language == 'en':
         translator_en = Translator_en(openai.api_key)
-        translated_image_paths = [translator_en.translate_to_english(path) for path in image_paths_to_display]
+        translated_image_paths = []                           # 空のリストで初期化
+        for path in image_paths_to_display:
+            # パスをデリミタ（バックスラッシュとスラッシュ）で分割
+            parts = re.split(r'([\\\/])', path)               #パスを分割
+            translated_parts = []                             # 翻訳された部分のリスト
+            for part in parts:
+                # 日本語の文字を検出して翻訳
+                if re.search(r'[\u3040-\u30FF\u4E00-\u9FFF]', part):
+                    translated_part = translator_en.translate_to_english(part)
+                    translated_parts.append(translated_part)  # 翻訳結果を追加
+                else:
+                    translated_parts.append(part)             # 翻訳不要な部分も追加
+            # 分割された部分を再結合
+            translated_path = ''.join(translated_parts)       # 再結合 with join
+            translated_image_paths.append(translated_path)    # 再結合後、翻訳後のパスのリストに追加
 
     return JsonResponse({
         'message': bot_response,                              # ボットからのテキストレスポンス
@@ -221,11 +237,9 @@ def chat_first_view(request):
     # clear_process（会話履歴クリア処理）の場合
     print('@@@@@ request.session clear_process @@@@@',request.session.get('clear_process'))
     if request.session.get('clear_process') == 'clear_process':
-        print('@@@@@ point001 @@@@@')
         del request.session['clear_process']
         # chat.htmlから連携されるuser_messageを渡さずにレンダリング
         return render(request, 'chat_first.html', context)
-    print('@@@@@ point002 @@@@@')
 
     # chat.htmlから連携される場合は、user_messageを含めてレンダリング
     user_message = request.GET.get('user_message')
