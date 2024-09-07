@@ -280,14 +280,23 @@ body {
   #startSpeechButton {
     display: none;
   }
+  #inputclear {
+    display: none;
+  }
 }
 @media (min-width: 724px) and (max-width: 789px) {
   #startSpeechButton {
     display: none;
   }
+  #inputclear {
+    display: none;
+  }
 }
 @media (min-width: 882px) and (max-width: 932px) {
   #startSpeechButton {
+    display: none;
+  }
+  #inputclear {
     display: none;
   }
 }
