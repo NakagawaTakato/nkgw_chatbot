@@ -1215,7 +1215,7 @@ msgstr ""
 msgid "送信"
 msgstr "Send"
 
-msgid "質問を入力して下さい"
+msgid "質問を入力"
 msgstr "Enter your question"
 
 msgid "言語選択 "
