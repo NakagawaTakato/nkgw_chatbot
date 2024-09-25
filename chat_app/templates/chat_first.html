@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
-<title>iFUSION-AI Chatbot</title>
+<title>AI Chatbot</title>
 <!-- Bootstrap CSS -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 <!-- Custom CSS -->
@@ -77,7 +77,7 @@
 
   <div class="container">
     <div class="chat-header">
-      iFUSION-AI Chatbot
+      AI Chatbot
     </div>
     <!-- chat_first.html 固有定義 START -->
     <div class="special-content dynamic-width">
@@ -347,11 +347,11 @@
                       });
                       // 固定文言をリストの最後に追加
                       if (currentLanguage === 'ja') {
-                          responseList.append('<li class="clickable-response" data-index="sel_etc1">その他選択：iFUSION-AI Chatbotに直接いろいろ聞きたい</li>');
-                          responseList.append('<li class="clickable-response" data-index="sel_etc2">その他選択：iFUSION-AI Chatbotにパッケージでやりたい事を伝えて回答をもらいたい</li>');
+                          responseList.append('<li class="clickable-response" data-index="sel_etc1">その他選択：AI Chatbotに直接いろいろ聞きたい</li>');
+                          responseList.append('<li class="clickable-response" data-index="sel_etc2">その他選択：AI Chatbotにパッケージでやりたい事を伝えて回答をもらいたい</li>');
                       } else {
-                          responseList.append('<li class="clickable-response" data-index="sel_etc1">Other option: I want to ask iFUSION-AI Chatbot directly</li>');
-                          responseList.append('<li class="clickable-response" data-index="sel_etc2">Other option: I want to tell iFUSION-AI Chatbot what I want to do with the package and get an answer</li>');
+                          responseList.append('<li class="clickable-response" data-index="sel_etc1">Other option: I want to ask AI Chatbot directly</li>');
+                          responseList.append('<li class="clickable-response" data-index="sel_etc2">Other option: I want to tell AI Chatbot what I want to do with the package and get an answer</li>');
                       }
                       messageContainer.append(responseList);
                       $('#messages').append(messageContainer);    // 既存のメッセージに追加

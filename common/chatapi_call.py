@@ -88,13 +88,13 @@ class Chatapi_Call:
                 bot_response = (
                     'Sorry, but I dont have any information about the subject of your question\n'
                     'We cant answer your question. If necessary, please contact our support team.\n'
-                    '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
+                    '(Tel: 03(xxxx)xxxx,  Email : xxx_support@xxx.co.jp)'
                 )
             else:
                 bot_response = (
                     '申し訳ありませんが、ご質問頂いた内容についての情報を持ち合わせていませんので\n'
                     'ご回答できません。必要であれば弊社のサポートチームへ連絡をお願い致します。\n'
-                    '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
+                    '(Tel: 03(xxxx)xxxx,  Email : xxx_support@xxx.co.jp)'
                 )
             # 会話履歴にユーザーメッセージを追加 
             user_history.append(self.user_message)
@@ -137,7 +137,7 @@ class Chatapi_Call:
                 bot_response = (
                     '申し訳ありませんが、ご質問頂いた内容についての情報を持ち合わせていませんので\n'
                     'ご回答できません。必要であれば弊社のサポートチームへ連絡をお願い致します。\n'
-                    '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
+                    '(Tel: 03(xxxx)xxxx,  Email : xxx_support@xxx.co.jp)'
                 )
 
             # APIからの応答をチェック
@@ -146,7 +146,7 @@ class Chatapi_Call:
                 bot_response = (
                     'Sorry, but I dont have any information about the subject of your question\n'
                     'We cant answer your question. If necessary, please contact our support team.\n'
-                    '(Tel: 03(6914)8524,  Email : ifusion_support@imprex.co.jp)'
+                    '(Tel: 03(xxxx)xxxx,  Email : xxx_support@xxx.co.jp)'
                 )
 
             # index-noがfaqの番号帯の場合、どのマニュアルのFAQであるかを表示する
